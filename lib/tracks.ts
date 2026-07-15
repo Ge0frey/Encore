@@ -1,3 +1,4 @@
+import type { CSSProperties as ReactCSSProperties } from "react";
 import raw from "@/data/tracks.json";
 
 export type Quake = { min: number; side: "p1" | "p2"; mag: number };
@@ -115,6 +116,36 @@ export const sleeveCombos = [
 
 export const sleeveCombo = (t: Track) =>
   sleeveCombos[(t.id + t.p1Id) % sleeveCombos.length];
+
+/**
+ * Carry a track's sleeve combo onto a full page: remaps the theme tokens the
+ * track page reads (background/foreground/primary/border/charts) so the card
+ * you clicked and the page you land on share one palette.
+ */
+export const sleeveThemeVars = (t: Track) => {
+  const c = sleeveCombo(t);
+  return {
+    "--background": c.bg,
+    "--foreground": c.fg,
+    "--card": `color-mix(in oklab, ${c.fg} 10%, ${c.bg})`,
+    "--card-foreground": c.fg,
+    "--secondary": `color-mix(in oklab, ${c.fg} 14%, ${c.bg})`,
+    "--secondary-foreground": c.fg,
+    "--muted": `color-mix(in oklab, ${c.fg} 14%, ${c.bg})`,
+    "--muted-foreground": `color-mix(in oklab, ${c.fg} 78%, transparent)`,
+    "--primary": c.accent,
+    "--primary-foreground": c.bg,
+    "--accent": c.accent,
+    "--accent-foreground": c.bg,
+    "--border": `color-mix(in oklab, ${c.fg} 32%, transparent)`,
+    "--input": `color-mix(in oklab, ${c.fg} 32%, transparent)`,
+    "--ring": c.accent,
+    "--chart-1": c.accent,
+    "--chart-2": c.fg,
+    "--chart-5": `color-mix(in oklab, ${c.fg} 65%, transparent)`,
+    "--gradient-bg": `linear-gradient(180deg, ${c.bg} 0%, ${c.bg} 100%)`,
+  } as ReactCSSProperties;
+};
 
 export const trackNumber = (t: Track) =>
   [...tracks].sort((a, b) => a.kickoff - b.kickoff).findIndex((x) => x.id === t.id) + 1;

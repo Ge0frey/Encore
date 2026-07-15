@@ -35,7 +35,7 @@ export default function Waveform({
             width={barW * 0.7}
             height={h}
             fill={color}
-            opacity={i < cut ? 0.95 : 0.28}
+            opacity={i < cut ? 0.95 : 0.42}
             rx={0.4}
           />
         );

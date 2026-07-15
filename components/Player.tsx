@@ -112,8 +112,8 @@ export default function Player({ track }: { track: Track }) {
   return (
     <div>
       {/* ── hero: giant lockup over the full waveform ───────────────── */}
-      <section className="relative -mx-6 overflow-hidden border-b border-border bg-[#0d0d0d] sm:-mx-10">
-        <div className="absolute inset-0 z-0 flex items-end px-6 pb-2 opacity-60 sm:px-10">
+      <section className="relative -mx-6 overflow-hidden border-b border-border bg-card sm:-mx-10">
+        <div className="absolute inset-0 z-0 flex items-end px-6 pb-2 opacity-80 sm:px-10">
           <Waveform wave={track.wave} height={340} progress={shown / TRACK_MIN} className="h-full w-full" />
         </div>
         <div className="relative z-10 flex min-h-[420px] flex-col justify-end p-6 sm:min-h-[560px] sm:p-12">
@@ -194,7 +194,7 @@ export default function Player({ track }: { track: Track }) {
                 <p className="text-muted-foreground">The needle drops…</p>
               )}
               {shownEvents.slice(-9).map((e, i) => (
-                <div key={i} className="flex gap-6 border-b border-white/5 pb-6">
+                <div key={i} className="flex gap-6 border-b border-foreground/10 pb-6">
                   <span className="shrink-0 text-primary">
                     {Math.floor(e.min)}&apos;
                   </span>
@@ -227,7 +227,7 @@ export default function Player({ track }: { track: Track }) {
           </div>
         </div>
 
-        <aside className="col-span-12 space-y-12 bg-[#0d0d0d] p-6 sm:p-12 lg:col-span-4">
+        <aside className="col-span-12 space-y-12 bg-card p-6 sm:p-12 lg:col-span-4">
           <div className="space-y-8">
             <h3 className="font-mono text-xs uppercase tracking-[0.4em] text-muted-foreground">
               Data Metrics
@@ -245,7 +245,7 @@ export default function Player({ track }: { track: Track }) {
                   ],
                 ] as const
               ).map(([label, value, hot]) => (
-                <div key={label} className="border-b border-white/10 pb-4">
+                <div key={label} className="border-b border-foreground/15 pb-4">
                   <p className="mb-1 font-mono text-xs uppercase text-muted-foreground">
                     {label}
                   </p>
@@ -331,7 +331,7 @@ export default function Player({ track }: { track: Track }) {
                 className={`border px-2 py-1 font-mono text-[10px] uppercase transition-colors sm:px-3 ${
                   speed === s
                     ? "border-primary text-primary"
-                    : "border-white/20 text-muted-foreground hover:border-white"
+                    : "border-foreground/25 text-muted-foreground hover:border-foreground"
                 }`}
               >
                 {s}×
@@ -339,7 +339,7 @@ export default function Player({ track }: { track: Track }) {
             ))}
             <button
               onClick={() => setSpoiler(true)}
-              className="border border-white/20 px-2 py-1 font-mono text-[10px] uppercase text-muted-foreground transition-colors hover:border-primary hover:text-primary sm:px-3"
+              className="border border-foreground/25 px-2 py-1 font-mono text-[10px] uppercase text-muted-foreground transition-colors hover:border-primary hover:text-primary sm:px-3"
             >
               Skip to FT
             </button>
