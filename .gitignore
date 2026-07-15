@@ -36,6 +36,11 @@ yarn-error.log*
 # vercel
 .vercel
 
+pipeline/_keys/
+pipeline/data/credentials.*.json
+pipeline/data/archive/
+pipeline/node_modules/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
