@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import SessionBadge from "@/components/SessionBadge";
 
 const NAV = [
-  { label: "Market", href: "/", match: (p: string) => p === "/" || p.startsWith("/track") },
+  { label: "Market", href: "/market", match: (p: string) => p.startsWith("/market") || p.startsWith("/track") },
   { label: "Vibe Check", href: "/dashboard", match: (p: string) => p.startsWith("/dashboard") },
   { label: "Archives", href: "/archive", match: (p: string) => p.startsWith("/archive") },
   { label: "Compare", href: "/compare", match: (p: string) => p.startsWith("/compare") },
@@ -15,6 +15,8 @@ const NAV = [
 /** Sticky editorial masthead — giant wordmark, mono nav, live session state. */
 export default function Header() {
   const pathname = usePathname();
+  // The landing page carries its own masthead + overlay menu (LandingNav).
+  if (pathname === "/") return null;
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background px-6 py-5 sm:px-10 sm:py-8">
       <div className="flex flex-wrap items-end justify-between gap-6">

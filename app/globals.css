@@ -115,6 +115,42 @@ body {
   display: none;
 }
 
+/* Landing overlay menu — items stagger in from the left, reverse on close.
+   Entry slower than exit; delay driven by --i set per item in LandingNav. */
+@keyframes menu-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes menu-item-in {
+  from { opacity: 0; transform: translateX(-3rem); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes menu-item-out {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(-3rem); }
+}
+[data-state="open"] .menu-overlay {
+  animation: menu-overlay-in 0.25s ease-out both;
+}
+@keyframes menu-overlay-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+[data-state="closing"] .menu-overlay {
+  animation: menu-overlay-out 0.25s ease-in 0.32s both;
+}
+.menu-item {
+  opacity: 0;
+}
+[data-state="open"] .menu-item {
+  animation: menu-item-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i) * 65ms + 80ms);
+}
+[data-state="closing"] .menu-item {
+  animation: menu-item-out 0.28s cubic-bezier(0.5, 0, 0.75, 0.4) both;
+  animation-delay: calc(var(--i) * 30ms);
+}
+
 /* Waveform Maximalist utilities (superdesign) */
 .text-outline {
   color: transparent;
