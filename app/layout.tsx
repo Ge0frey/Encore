@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, Space_Mono } from "next/font/google";
 import TxlineProvider from "@/components/TxlineProvider";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import "./globals.css";
 
 const sans = Space_Grotesk({
@@ -33,11 +31,7 @@ export default function RootLayout({
       className={`${sans.variable} ${mono.variable} dark h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <TxlineProvider>
-          <Header />
-          <div className="flex-1">{children}</div>
-          <Footer />
-        </TxlineProvider>
+        <TxlineProvider>{children}</TxlineProvider>
       </body>
     </html>
   );

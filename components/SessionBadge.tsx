@@ -21,6 +21,8 @@ export default function SessionBadge() {
     step,
     error,
     connected,
+    connecting,
+    selected,
     wallet,
     connect,
     reprovision,
@@ -29,7 +31,18 @@ export default function SessionBadge() {
   } = useTxline();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [grace, setGrace] = useState(true);
   const rootRef = useRef<HTMLDivElement>(null);
+
+  // autoConnect restores the previous wallet shortly after load; until then
+  // (or a short grace window if it never resolves) hold a blank placeholder
+  // instead of flashing the Connect button at returning users.
+  useEffect(() => {
+    setMounted(true);
+    const t = setTimeout(() => setGrace(false), 2500);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -48,6 +61,9 @@ export default function SessionBadge() {
   }, [open]);
 
   if (!connected || !wallet) {
+    if (!mounted || connecting || (selected && grace)) {
+      return <span aria-hidden className="inline-block h-9 w-40" />;
+    }
     return (
       <button
         onClick={connect}

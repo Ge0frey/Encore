@@ -35,6 +35,10 @@ type Ctx = {
   step: ProvisionStep | null;
   error: string | null;
   connected: boolean;
+  /** Adapter is mid-connect (incl. autoConnect restore on page load). */
+  connecting: boolean;
+  /** A wallet is selected from a previous session (autoConnect will try it). */
+  selected: boolean;
   wallet: string | null;
   connect: () => void;
   reprovision: () => void;
@@ -47,6 +51,8 @@ const SessionCtx = createContext<Ctx>({
   step: null,
   error: null,
   connected: false,
+  connecting: false,
+  selected: false,
   wallet: null,
   connect: () => {},
   reprovision: () => {},
@@ -98,6 +104,8 @@ function SessionInner({ children }: { children: React.ReactNode }) {
       step,
       error,
       connected: !!wallet.publicKey,
+      connecting: wallet.connecting,
+      selected: !!wallet.wallet,
       wallet: wallet.publicKey?.toBase58() ?? null,
       connect: () => setVisible(true),
       reprovision: () => void run(),
@@ -106,7 +114,7 @@ function SessionInner({ children }: { children: React.ReactNode }) {
       changeWallet: () =>
         void wallet.disconnect().finally(() => setVisible(true)),
     }),
-    [session, step, error, wallet.publicKey, setVisible, run]
+    [session, step, error, wallet, setVisible, run]
   );
 
   return <SessionCtx.Provider value={value}>{children}</SessionCtx.Provider>;

@@ -3,8 +3,7 @@ import { notFound } from "next/navigation";
 import Player from "@/components/Player";
 import MatchCard from "@/components/MatchCard";
 import Verify from "@/components/Verify";
-import SleeveTheme from "@/components/SleeveTheme";
-import { getTrack, tracks, trackNumber, sleeveThemeVars } from "@/lib/tracks";
+import { getTrack, tracks, trackNumber } from "@/lib/tracks";
 
 export function generateStaticParams() {
   return tracks.map((t) => ({ id: String(t.id) }));
@@ -25,11 +24,7 @@ export default async function TrackPage({
   const next = [1, 2, 3, 4].map((o) => album[(idx + o) % album.length]);
 
   return (
-    <main
-      className="min-h-screen bg-background px-6 pb-40 text-foreground sm:px-10"
-      style={sleeveThemeVars(track)}
-    >
-      <SleeveTheme track={track} />
+    <main className="px-6 pb-40 sm:px-10">
       <Player track={track} />
 
       <section className="space-y-12 py-12">
