@@ -35,8 +35,11 @@ type Ctx = {
   step: ProvisionStep | null;
   error: string | null;
   connected: boolean;
+  wallet: string | null;
   connect: () => void;
   reprovision: () => void;
+  disconnect: () => void;
+  changeWallet: () => void;
 };
 
 const SessionCtx = createContext<Ctx>({
@@ -44,8 +47,11 @@ const SessionCtx = createContext<Ctx>({
   step: null,
   error: null,
   connected: false,
+  wallet: null,
   connect: () => {},
   reprovision: () => {},
+  disconnect: () => {},
+  changeWallet: () => {},
 });
 
 export const useTxline = () => useContext(SessionCtx);
@@ -92,8 +98,13 @@ function SessionInner({ children }: { children: React.ReactNode }) {
       step,
       error,
       connected: !!wallet.publicKey,
+      wallet: wallet.publicKey?.toBase58() ?? null,
       connect: () => setVisible(true),
       reprovision: () => void run(),
+      disconnect: () => void wallet.disconnect(),
+      // Drop the current adapter first so the modal reopens as a fresh picker.
+      changeWallet: () =>
+        void wallet.disconnect().finally(() => setVisible(true)),
     }),
     [session, step, error, wallet.publicKey, setVisible, run]
   );
