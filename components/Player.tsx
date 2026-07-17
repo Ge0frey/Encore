@@ -132,10 +132,20 @@ export default function Player({ track }: { track: Track }) {
             </div>
             <div className="space-y-2 pb-2 text-right sm:space-y-4">
               <div className="font-mono text-6xl font-bold tracking-tight text-primary sm:text-8xl">
-                {track.score ? `${g1} - ${g2}` : done ? "REC" : "? - ?"}
+                {track.score
+                  ? `${g1} - ${g2}`
+                  : done
+                    ? track.outcome === "draw"
+                      ? "DRAW"
+                      : `${abbr(track.outcome === "p1" ? track.p1 : track.p2)} WIN`
+                    : "? - ?"}
               </div>
               <div className="font-mono text-sm uppercase tracking-widest text-muted-foreground sm:text-xl">
-                {`${done ? "Full Time" : "Replay"} // ${clock}`}
+                {done
+                  ? track.score
+                    ? `Full Time // ${clock}`
+                    : "Per market consensus"
+                  : `Replay // ${clock}`}
               </div>
             </div>
           </div>
@@ -168,10 +178,10 @@ export default function Player({ track }: { track: Track }) {
             )}
             {done && !track.scoresReal && (
               <p className="max-w-3xl font-mono text-xs leading-relaxed text-muted-foreground">
-                Bootleg recording: the score feed for this match is past
-                TxLINE&apos;s retention window — everything you just watched was
-                reconstructed purely from market movement. Winner per closing
-                consensus:{" "}
+                Bootleg recording: TxLINE&apos;s World Cup score feed went live
+                on June 18 and this match was played before it — everything you
+                just watched was reconstructed purely from market movement.
+                Winner per closing consensus:{" "}
                 {track.outcome === "draw"
                   ? "draw"
                   : track.outcome === "p1"
