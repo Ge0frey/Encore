@@ -118,6 +118,22 @@ export const sleeveCombo = (t: Track) =>
   sleeveCombos[(t.id + t.p1Id) % sleeveCombos.length];
 
 /**
+ * Hex twins of `sleeveCombos` (same order, same indexing) for renderers that
+ * can't parse oklch — satori/ImageResponse share cards.
+ */
+export const sleeveCombosHex = [
+  { bg: "#FF4C4D", fg: "#100606", accent: "#FBF4EA" },
+  { bg: "#150A09", fg: "#FBF4EA", accent: "#FF4C4D" },
+  { bg: "#FBF4EA", fg: "#150A09", accent: "#D40924" },
+  { bg: "#E4B750", fg: "#150A09", accent: "#D40924" },
+  { bg: "#0E2A45", fg: "#FBF4EA", accent: "#FF4C4D" },
+  { bg: "#09471F", fg: "#FBF4EA", accent: "#E4B750" },
+];
+
+export const sleeveComboHex = (t: Track) =>
+  sleeveCombosHex[(t.id + t.p1Id) % sleeveCombosHex.length];
+
+/**
  * Carry a track's sleeve combo onto a full page: remaps the theme tokens the
  * track page reads (background/foreground/primary/border/charts) so the card
  * you clicked and the page you land on share one palette.

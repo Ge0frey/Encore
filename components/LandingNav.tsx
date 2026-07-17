@@ -23,6 +23,7 @@ const ROOMS = [
   { label: "Vibe Check", href: "/dashboard" },
   { label: "Archives", href: "/archive" },
   { label: "Compare", href: "/compare" },
+  { label: "Golazo", href: "/guess" },
   { label: "Booth", href: "/live" },
 ];
 

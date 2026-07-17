@@ -5,6 +5,8 @@ import Link from "next/link";
 import MatchCard from "@/components/MatchCard";
 import { useTxline } from "@/components/TxlineProvider";
 import { useHistory, HistoryEntry } from "@/lib/history";
+import { currentStreak, useGolazo } from "@/lib/golazo";
+import { explorerUrl, usePressings } from "@/lib/pressing";
 import {
   tracks,
   getTrack,
@@ -34,6 +36,8 @@ function MiniWave({ track }: { track: Track }) {
 export default function DashboardPage() {
   const { session } = useTxline();
   const history = useHistory();
+  const golazo = useGolazo();
+  const pressings = usePressings();
 
   const played = useMemo(
     () =>
@@ -171,7 +175,68 @@ export default function DashboardPage() {
                 </div>
                 <div className="font-mono text-3xl font-bold">{uniqueBangers}</div>
               </div>
+              <Link
+                href="/guess"
+                className="border border-border bg-card p-6 transition-colors hover:border-primary"
+              >
+                <div className="mb-2 font-mono text-xs uppercase text-muted-foreground">
+                  Golazo Streak
+                </div>
+                <div className="font-mono text-3xl font-bold text-primary">
+                  {currentStreak(golazo.stats)}
+                </div>
+              </Link>
+              <div className="border border-border bg-card p-6">
+                <div className="mb-2 font-mono text-xs uppercase text-muted-foreground">
+                  Golazo Solved
+                </div>
+                <div className="font-mono text-3xl font-bold">
+                  {golazo.stats.wins}/{golazo.stats.played}
+                </div>
+              </div>
             </div>
+          </div>
+
+          {/* pressings shelf */}
+          <div className="space-y-4">
+            <div className="flex items-baseline justify-between border-b border-border pb-3">
+              <h3 className="text-xl font-bold uppercase tracking-tight">
+                Your Pressings
+              </h3>
+              <p className="font-mono text-xs text-muted-foreground">
+                {pressings.length} MINTED
+              </p>
+            </div>
+            {pressings.length === 0 && (
+              <p className="font-mono text-xs uppercase text-muted-foreground">
+                No pressings yet — mint one from any track page.
+              </p>
+            )}
+            {pressings.slice(0, 6).map((p) => {
+              const t = getTrack(p.trackId);
+              if (!t) return null;
+              return (
+                <div
+                  key={p.mint}
+                  className="flex items-baseline justify-between gap-3 border border-border bg-card px-4 py-3"
+                >
+                  <Link
+                    href={`/track/${t.id}`}
+                    className="font-mono text-sm hover:text-primary"
+                  >
+                    ◉ {abbr(t.p1)} v {abbr(t.p2)}
+                  </Link>
+                  <a
+                    href={explorerUrl(p.mint)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-mono text-[10px] uppercase text-primary hover:underline"
+                  >
+                    {p.mint.slice(0, 4)}…{p.mint.slice(-4)} ↗
+                  </a>
+                </div>
+              );
+            })}
           </div>
 
           <div className="space-y-6 border-2 border-primary p-8">

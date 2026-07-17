@@ -9,6 +9,7 @@ const NAV = [
   { label: "Vibe Check", href: "/dashboard", match: (p: string) => p.startsWith("/dashboard") },
   { label: "Archives", href: "/archive", match: (p: string) => p.startsWith("/archive") },
   { label: "Compare", href: "/compare", match: (p: string) => p.startsWith("/compare") },
+  { label: "Golazo", href: "/guess", match: (p: string) => p.startsWith("/guess") },
   { label: "Booth", href: "/live", match: (p: string) => p.startsWith("/live") },
 ];
 

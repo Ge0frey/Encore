@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Player from "@/components/Player";
 import MatchCard from "@/components/MatchCard";
 import Verify from "@/components/Verify";
+import Press from "@/components/Press";
 import { getTrack, tracks, trackNumber } from "@/lib/tracks";
 
 export function generateStaticParams() {
@@ -36,7 +37,11 @@ export default async function TrackPage({
             {`TRK ${String(trackNumber(track)).padStart(3, "0")} // ON-CHAIN PRESSING`}
           </p>
         </div>
-        <Verify track={track} />
+        {/* one editorial spread: oracle check | pressing, hard corners, shared frame */}
+        <div className="grid grid-cols-1 border border-border md:grid-cols-2">
+          <Verify track={track} />
+          <Press track={track} />
+        </div>
       </section>
 
       <section className="space-y-12 border-t border-border pt-12">
