@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { tracks, sleeveCombo, abbr, trackNumber, fmtDate, Track } from "@/lib/tracks";
+import { verdict } from "@/lib/banter";
 
 const byVolatility = [...tracks].sort(
   (a, b) => b.metrics.volatility - a.metrics.volatility
@@ -159,7 +160,9 @@ function CompareColumn({
 
 export default function ComparePage() {
   const [ids, setIds] = useState<number[]>(byVolatility.slice(0, 3).map((t) => t.id));
+  const [copied, setCopied] = useState(false);
   const picked = ids.map((id) => tracks.find((t) => t.id === id)!).filter(Boolean);
+  const v = verdict(picked);
 
   const avgVol =
     picked.reduce((a, t) => a + t.metrics.volatility, 0) / (picked.length || 1);
@@ -190,6 +193,82 @@ export default function ComparePage() {
           />
         ))}
       </section>
+
+      {/* BANTER — the argument, settled with receipts */}
+      {v && (
+        <section className="border-t border-border pt-16">
+          <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
+            <h2 className="text-2xl font-bold uppercase tracking-widest">
+              The Verdict
+            </h2>
+            <p className="font-mono text-xs text-muted-foreground">
+              Settled by TxLINE receipts, not opinions
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[2fr_1fr]">
+            <div className="flex flex-col justify-between space-y-8 border border-primary bg-card p-8 sm:p-10">
+              <div className="space-y-6">
+                <span className="inline-block border border-primary px-4 py-2 font-mono text-xs uppercase tracking-[0.3em] text-primary">
+                  {v.title}
+                </span>
+                <h3 className="text-4xl font-bold uppercase tracking-tighter sm:text-5xl">
+                  {abbr(v.winner.p1)} v {abbr(v.winner.p2)}
+                </h3>
+                <p className="max-w-xl text-lg font-light leading-relaxed text-foreground/80">
+                  {v.roast}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-4">
+                <a
+                  href={`/compare/card?a=${v.winner.id}&b=${v.runnerUp.id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="border border-primary px-6 py-3 font-mono text-xs uppercase tracking-widest text-primary transition-all hover:bg-primary hover:text-primary-foreground"
+                >
+                  Open Verdict Card ↗
+                </a>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      `${location.origin}/compare/card?a=${v.winner.id}&b=${v.runnerUp.id}`
+                    );
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="border border-border px-6 py-3 font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                >
+                  {copied ? "Copied ✓" : "Copy card link"}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-6 border border-border bg-card p-8">
+              <h4 className="font-mono text-xs uppercase text-muted-foreground">
+                Receipts — {abbr(v.winner.p1)}/{abbr(v.winner.p2)} vs{" "}
+                {abbr(v.runnerUp.p1)}/{abbr(v.runnerUp.p2)}
+              </h4>
+              {v.receipts.map((r) => (
+                <div
+                  key={r.label}
+                  className="flex items-baseline justify-between border-b border-border pb-3"
+                >
+                  <span className="font-mono text-[10px] uppercase text-muted-foreground">
+                    {r.label}
+                  </span>
+                  <span className="font-mono text-xl font-bold tabular-nums">
+                    <span className="text-primary">{r.winner}</span>
+                    <span className="mx-2 text-muted-foreground">/</span>
+                    {r.runnerUp}
+                  </span>
+                </div>
+              ))}
+              <p className="text-xs uppercase leading-relaxed text-muted-foreground">
+                Both records cut from the same TxLINE odds archive, committed
+                to Solana.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="border-t border-border pt-16">
         <div className="mb-12 flex flex-wrap items-end justify-between gap-4">

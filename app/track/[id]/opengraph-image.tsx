@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { getTrack, tracks, abbr, sleeveCombo, trackNumber } from "@/lib/tracks";
+import { roastLine } from "@/lib/banter";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
@@ -65,7 +66,7 @@ export default async function OgImage({
           ))}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 24, color: "#B39B94" }}>
-          <span>{track.lines[0]?.slice(0, 80)}</span>
+          <span>{roastLine(track).slice(0, 80)}</span>
           <span>cut from TxLINE market data</span>
         </div>
       </div>
