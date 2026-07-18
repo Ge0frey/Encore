@@ -291,6 +291,23 @@ export default function ComparePage() {
                 >
                   {copied ? "Copied ✓" : "Copy card link"}
                 </button>
+                <button
+                  onClick={async () => {
+                    const res = await fetch(
+                      `/compare/card?a=${v.winner.id}&b=${v.runnerUp.id}`
+                    );
+                    const blob = await res.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `encore-verdict-${v.winner.id}-${v.runnerUp.id}.png`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="border border-border px-6 py-3 font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                >
+                  Download PNG
+                </button>
               </div>
             </div>
             <div className="space-y-6 border border-border bg-card p-8">

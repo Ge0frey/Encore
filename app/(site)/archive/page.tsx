@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import MatchCard from "@/components/MatchCard";
-import { tracks, stages, fmtDate } from "@/lib/tracks";
+import { tracks, stages, fmtDate, allTeams, teamSlug } from "@/lib/tracks";
 
 const PAGE = 12;
 const TIERS = ["All", "High Volatility", "Stable", "Crashes"] as const;
 type Tier = (typeof TIERS)[number];
 
-const teams = [...new Set(tracks.flatMap((t) => [t.p1, t.p2]))].sort();
+const teams = allTeams.map((t) => t.name);
 
 export default function ArchivePage() {
   const [query, setQuery] = useState("");
@@ -248,6 +249,17 @@ export default function ArchivePage() {
             <span className="font-mono text-xs uppercase text-muted-foreground">
               Displaying {Math.min(limit, results.length)} of {results.length}{" "}
               archived sessions
+              {team && (
+                <>
+                  {" · "}
+                  <Link
+                    href={`/run/${teamSlug(team)}`}
+                    className="text-primary hover:underline"
+                  >
+                    View {team}&apos;s full run →
+                  </Link>
+                </>
+              )}
             </span>
             <div className="flex items-center gap-4 font-mono text-xs uppercase">
               <span className="text-muted-foreground">Sort by:</span>

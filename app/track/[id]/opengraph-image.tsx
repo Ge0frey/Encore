@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { getTrack, tracks, abbr, sleeveCombo, trackNumber } from "@/lib/tracks";
+import { getTrack, tracks, abbr, sleeveComboHex, trackNumber } from "@/lib/tracks";
 import { roastLine } from "@/lib/banter";
 
 export const size = { width: 1200, height: 630 };
@@ -17,7 +17,9 @@ export default async function OgImage({
   const { id } = await params;
   const track = getTrack(Number(id));
   if (!track) return new Response("not found", { status: 404 });
-  const c = sleeveCombo(track);
+  // the sleeve carries the same palette as the MatchCard you clicked
+  const c = sleeveComboHex(track);
+  const muted = `${c.fg}99`;
   const max = Math.max(...track.wave, 0.5);
   const bars = track.wave.filter((_, i) => i % 2 === 0);
 
@@ -30,25 +32,35 @@ export default async function OgImage({
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          background: "#1A100D",
-          color: "#F7F2F0",
+          background: c.bg,
+          color: c.fg,
           padding: 64,
           fontFamily: "sans-serif",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 26, color: "#F0654A", letterSpacing: 4 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            fontSize: 26,
+            color: c.accent,
+            letterSpacing: 4,
+          }}
+        >
           <span>ENCORE — NOW PLAYING</span>
           <span>
             TRK {String(trackNumber(track)).padStart(3, "0")} · {track.stage.toUpperCase()}
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 28 }}>
-          <span style={{ fontSize: 120, fontWeight: 700, color: c.bg === "#1A100D" ? "#F7F2F0" : undefined }}>
+          <span style={{ fontSize: 120, fontWeight: 700, color: c.fg }}>
             {abbr(track.p1)}
           </span>
-          <span style={{ fontSize: 64, color: "#F0654A" }}>v</span>
-          <span style={{ fontSize: 120, fontWeight: 700, color: "#F0654A" }}>{abbr(track.p2)}</span>
-          <span style={{ fontSize: 30, color: "#B39B94", marginLeft: "auto" }}>
+          <span style={{ fontSize: 64, color: c.accent }}>v</span>
+          <span style={{ fontSize: 120, fontWeight: 700, color: c.accent }}>
+            {abbr(track.p2)}
+          </span>
+          <span style={{ fontSize: 30, color: muted, marginLeft: "auto" }}>
             {track.p1} v {track.p2}
           </span>
         </div>
@@ -59,13 +71,20 @@ export default async function OgImage({
               style={{
                 flex: 1,
                 height: Math.max(4, (v / max) * 160),
-                background: "#F0654A",
+                background: c.accent,
                 borderRadius: 2,
               }}
             />
           ))}
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 24, color: "#B39B94" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            fontSize: 24,
+            color: muted,
+          }}
+        >
           <span>{roastLine(track).slice(0, 80)}</span>
           <span>cut from TxLINE market data</span>
         </div>

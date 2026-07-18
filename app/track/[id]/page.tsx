@@ -4,6 +4,7 @@ import Player from "@/components/Player";
 import MatchCard from "@/components/MatchCard";
 import Verify from "@/components/Verify";
 import Press from "@/components/Press";
+import ShareCard from "@/components/ShareCard";
 import { getTrack, tracks, trackNumber } from "@/lib/tracks";
 
 export function generateStaticParams() {
@@ -33,9 +34,15 @@ export default async function TrackPage({
           <h2 className="text-3xl font-semibold uppercase tracking-tighter sm:text-4xl">
             Authenticity
           </h2>
-          <p className="font-mono text-xs uppercase text-muted-foreground">
-            {`TRK ${String(trackNumber(track)).padStart(3, "0")} // ON-CHAIN PRESSING`}
-          </p>
+          <div className="flex items-center gap-6">
+            <p className="font-mono text-xs uppercase text-muted-foreground">
+              {`TRK ${String(trackNumber(track)).padStart(3, "0")} // ON-CHAIN PRESSING`}
+            </p>
+            <ShareCard
+              imageUrl={`/track/${track.id}/opengraph-image`}
+              filename={`encore-trk-${String(trackNumber(track)).padStart(3, "0")}.png`}
+            />
+          </div>
         </div>
         {/* one editorial spread: oracle check | pressing, hard corners, shared frame */}
         <div className="grid grid-cols-1 border border-border md:grid-cols-2">
