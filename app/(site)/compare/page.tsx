@@ -28,15 +28,23 @@ function moments(t: Track) {
 function CompareColumn({
   track,
   onSwap,
+  inFaceOff,
+  onFaceOff,
 }: {
   track: Track;
   onSwap: (id: number) => void;
+  inFaceOff: boolean;
+  onFaceOff: () => void;
 }) {
   const c = sleeveCombo(track);
   const max = Math.max(...track.wave, 0.5);
   const bars = track.wave.filter((_, i) => i % 8 === 0);
   return (
-    <div className="group flex flex-col overflow-hidden border border-border bg-card">
+    <div
+      className={`group flex flex-col overflow-hidden border bg-card ${
+        inFaceOff ? "border-primary" : "border-border"
+      }`}
+    >
       <div
         className="relative h-[320px] border-b border-border sm:h-[400px]"
         style={{ backgroundColor: c.bg, color: c.fg }}
@@ -60,6 +68,11 @@ function CompareColumn({
               style={{ color: c.accent }}
             >
               Track {String(trackNumber(track)).padStart(3, "0")}
+              {inFaceOff && (
+                <span className="ml-3 whitespace-nowrap border px-2 py-0.5 text-[10px]" style={{ borderColor: c.accent }}>
+                  Face-off
+                </span>
+              )}
             </span>
             <div className="text-right">
               <div className="font-mono text-3xl font-bold" style={{ color: c.accent }}>
@@ -147,6 +160,17 @@ function CompareColumn({
             </option>
           ))}
         </select>
+        <button
+          onClick={onFaceOff}
+          disabled={inFaceOff}
+          className={`py-4 text-center font-mono text-xs uppercase tracking-widest transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+            inFaceOff
+              ? "bg-primary text-primary-foreground"
+              : "border border-border text-muted-foreground hover:border-primary hover:text-primary"
+          }`}
+        >
+          {inFaceOff ? "In the face-off" : "Face off"}
+        </button>
         <Link
           href={`/track/${track.id}`}
           className="border border-primary py-4 text-center font-mono text-xs uppercase tracking-widest text-primary transition-all hover:bg-primary hover:text-primary-foreground"
@@ -160,9 +184,20 @@ function CompareColumn({
 
 export default function ComparePage() {
   const [ids, setIds] = useState<number[]>(byVolatility.slice(0, 3).map((t) => t.id));
+  // Column indices currently in the ring, oldest first — tapping a third
+  // column bumps the older challenger (always exactly two in contention).
+  const [faceOff, setFaceOff] = useState<[number, number]>([0, 1]);
   const [copied, setCopied] = useState(false);
   const picked = ids.map((id) => tracks.find((t) => t.id === id)!).filter(Boolean);
-  const v = verdict(picked);
+  const contenders = faceOff
+    .map((i) => picked[i])
+    .filter((t): t is Track => !!t);
+  const v = verdict(contenders);
+
+  const enterFaceOff = (col: number) =>
+    setFaceOff(([older, recent]) =>
+      col === older || col === recent ? [older, recent] : [recent, col]
+    );
 
   const avgVol =
     picked.reduce((a, t) => a + t.metrics.volatility, 0) / (picked.length || 1);
@@ -182,16 +217,24 @@ export default function ComparePage() {
         </p>
       </section>
 
-      <section className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {picked.map((t, i) => (
-          <CompareColumn
-            key={t.id}
-            track={t}
-            onSwap={(id) =>
-              setIds((prev) => prev.map((p, j) => (j === i ? id : p)))
-            }
-          />
-        ))}
+      <section className="space-y-6">
+        <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+          Three on the bench, two in the ring — tap{" "}
+          <span className="text-primary">Face off</span> to change the matchup.
+        </p>
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          {picked.map((t, i) => (
+            <CompareColumn
+              key={t.id}
+              track={t}
+              onSwap={(id) =>
+                setIds((prev) => prev.map((p, j) => (j === i ? id : p)))
+              }
+              inFaceOff={faceOff.includes(i)}
+              onFaceOff={() => enterFaceOff(i)}
+            />
+          ))}
+        </div>
       </section>
 
       {/* BANTER — the argument, settled with receipts */}
@@ -199,7 +242,8 @@ export default function ComparePage() {
         <section className="border-t border-border pt-16">
           <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
             <h2 className="text-2xl font-bold uppercase tracking-widest">
-              The Verdict
+              The Verdict — {abbr(v.winner.p1)}/{abbr(v.winner.p2)} vs{" "}
+              {abbr(v.runnerUp.p1)}/{abbr(v.runnerUp.p2)}
             </h2>
             <p className="font-mono text-xs text-muted-foreground">
               Settled by TxLINE receipts, not opinions
@@ -211,9 +255,17 @@ export default function ComparePage() {
                 <span className="inline-block border border-primary px-4 py-2 font-mono text-xs uppercase tracking-[0.3em] text-primary">
                   {v.title}
                 </span>
-                <h3 className="text-4xl font-bold uppercase tracking-tighter sm:text-5xl">
-                  {abbr(v.winner.p1)} v {abbr(v.winner.p2)}
-                </h3>
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                  <h3 className="text-4xl font-bold uppercase tracking-tighter text-primary sm:text-5xl">
+                    {abbr(v.winner.p1)} v {abbr(v.winner.p2)}
+                  </h3>
+                  <span className="font-mono text-sm uppercase tracking-widest text-muted-foreground">
+                    beats
+                  </span>
+                  <h3 className="text-4xl font-bold uppercase tracking-tighter text-muted-foreground sm:text-5xl">
+                    {abbr(v.runnerUp.p1)} v {abbr(v.runnerUp.p2)}
+                  </h3>
+                </div>
                 <p className="max-w-xl text-lg font-light leading-relaxed text-foreground/80">
                   {v.roast}
                 </p>
