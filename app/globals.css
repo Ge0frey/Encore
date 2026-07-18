@@ -180,6 +180,40 @@ body {
   }
 }
 
+/* Golazo choreography — clues tear open, guesses slam in, the reveal
+   arrives in staged beats (delay driven by --rs per element) */
+@keyframes clue-open {
+  from { opacity: 0; transform: translateY(0.75rem); }
+  to { opacity: 1; transform: none; }
+}
+.clue-open {
+  animation: clue-open 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes guess-slam {
+  0% { opacity: 0; transform: translateY(-0.5rem); }
+  100% { opacity: 1; transform: none; }
+}
+.guess-slam {
+  animation: guess-slam 0.35s ease-out both;
+}
+@keyframes reveal-step {
+  from { opacity: 0; transform: translateY(2rem); }
+  to { opacity: 1; transform: none; }
+}
+.reveal-step {
+  opacity: 0;
+  animation: reveal-step 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--rs) * 200ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .clue-open,
+  .guess-slam,
+  .reveal-step {
+    animation: none;
+    opacity: 1;
+  }
+}
+
 /* Waveform Maximalist utilities (superdesign) */
 .text-outline {
   color: transparent;

@@ -24,7 +24,7 @@ const ROOMS = [
   { label: "Archives", href: "/archive" },
   { label: "Runs", href: "/run" },
   { label: "Compare", href: "/compare" },
-  { label: "Golazo", href: "/guess" },
+  { label: "Mystery", href: "/guess" },
   { label: "Booth", href: "/live" },
 ];
 

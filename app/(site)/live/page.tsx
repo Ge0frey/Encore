@@ -24,18 +24,36 @@ type OddsMsg = {
 
 const WORLD_CUP = 72;
 
+/** VU wall — the live waveform, cut bar by bar as odds land. */
 function LiveWave({ points }: { points: number[] }) {
   const max = Math.max(...points, 0.5);
   return (
-    <div className="flex h-24 items-end gap-[2px]">
+    <div className="flex h-40 items-end gap-[2px] sm:h-56">
       {points.slice(-160).map((v, i) => (
         <div
           key={i}
-          className="flex-1 rounded-[1px] bg-primary"
-          style={{ height: `${Math.max(3, (v / max) * 96)}px` }}
+          className="flex-1 bg-primary"
+          style={{ height: `${Math.max(2, (v / max) * 100)}%` }}
         />
       ))}
     </div>
+  );
+}
+
+/** Studio lamp — stream state as a console light. */
+function Lamp({ status }: { status: "idle" | "open" | "closed" | "error" }) {
+  const LAMPS = {
+    idle: { label: "Standby", cls: "text-muted-foreground", dot: "bg-muted-foreground" },
+    open: { label: "REC", cls: "text-primary", dot: "animate-pulse bg-primary" },
+    closed: { label: "Off Air", cls: "text-muted-foreground", dot: "bg-muted-foreground" },
+    error: { label: "Signal Lost", cls: "text-destructive", dot: "bg-destructive" },
+  } as const;
+  const l = LAMPS[status];
+  return (
+    <span className={`inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.25em] ${l.cls}`}>
+      <span className={`h-2.5 w-2.5 rounded-full ${l.dot}`} />
+      {l.label}
+    </span>
   );
 }
 
@@ -105,120 +123,212 @@ export default function LivePage() {
   );
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-6 pb-24">
-      <p className="pt-8 font-mono text-xs uppercase tracking-[0.3em] text-primary">
-        Live Recording Booth
-      </p>
+    <main className="pb-32">
+      {/* ── masthead: the live room ─────────────────────────────────── */}
+      <section className="border-b border-border px-6 py-16 sm:px-10 sm:py-24">
+        <div className="flex flex-wrap items-end justify-between gap-8">
+          <div className="space-y-2">
+            <div className="font-mono text-xs uppercase tracking-[0.3em] text-primary sm:text-sm">
+              The World Cup Collection // Live Room
+            </div>
+            <h1 className="flex flex-col text-[5rem] font-bold leading-[0.8] tracking-tighter sm:text-[9rem] xl:text-[11rem]">
+              <span>THE</span>
+              <span className="text-outline">BOOTH</span>
+            </h1>
+            <p className="max-w-xl pt-4 text-sm leading-relaxed text-muted-foreground">
+              The next tracks on this record are still being played. The booth
+              taps TxLINE&apos;s odds wire directly from your browser — with
+              credentials your own wallet provisioned on-chain — and cuts the
+              waveform as it lands.
+            </p>
+          </div>
+          <div className="pb-2">
+            <Lamp status={picked ? status : "idle"} />
+          </div>
+        </div>
+      </section>
 
-      <h1 className="mt-4 text-4xl font-bold uppercase tracking-tighter sm:text-6xl">
-        <span className="mr-2 inline-block h-3 w-3 animate-pulse rounded-full bg-primary" />
-        Recording…
-      </h1>
-      <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-        The next tracks on this record are still being played. This booth taps
-        TxLINE&apos;s odds stream directly from your browser, with credentials
-        your own wallet provisioned on-chain — and cuts the waveform in real
-        time.
-      </p>
+      {/* ── console strip ───────────────────────────────────────────── */}
+      <section className="grid grid-cols-2 border-b border-border sm:grid-cols-4">
+        {(
+          [
+            ["Signal", picked ? status.toUpperCase() : "STANDBY", status === "open"],
+            ["Tape Counter", String(msgs).padStart(4, "0"), false],
+            [
+              "On the Desk",
+              picked ? `${picked.Participant1} v ${picked.Participant2}` : "—",
+              false,
+            ],
+            [
+              "Session",
+              session ? `${session.wallet.slice(0, 4)}…${session.wallet.slice(-4)}` : "COLD",
+              false,
+            ],
+          ] as const
+        ).map(([label, value, hot]) => (
+          <div
+            key={label}
+            className="border-b border-r border-border p-6 last:border-r-0 sm:border-b-0 sm:p-8"
+          >
+            <p className="mb-1 font-mono text-xs uppercase text-muted-foreground">
+              {label}
+            </p>
+            <p
+              className={`truncate font-mono text-xl font-bold sm:text-2xl ${hot ? "text-primary" : ""}`}
+            >
+              {value}
+            </p>
+          </div>
+        ))}
+      </section>
 
       {!session ? (
-        <div className="mt-10 rounded-xl border border-border bg-card p-8 text-center">
-          <p className="text-sm text-muted-foreground">
+        /* ── the desk is cold: power on ──────────────────────────────── */
+        <section className="px-6 py-24 sm:px-10 sm:py-32">
+          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+            The desk is cold /
+          </p>
+          <p className="mt-6 max-w-2xl text-2xl font-light leading-relaxed sm:text-3xl">
             {connected && step && step !== "done"
-              ? "Provisioning your TxLINE session…"
-              : "Connect a devnet wallet to open the booth. One on-chain subscribe (free tier), one signature — then the stream is yours."}
+              ? "Provisioning your TxLINE session — warming the valves…"
+              : "One devnet wallet, one on-chain subscribe (free tier), one signature — then the wire is yours."}
           </p>
           {!connected && (
             <button
               onClick={connect}
-              className="mt-4 rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"
+              className="mt-10 border border-primary px-10 py-4 font-mono text-sm uppercase tracking-widest text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
             >
-              Connect wallet
+              Power on the desk →
             </button>
           )}
-        </div>
+        </section>
       ) : (
         <>
-          <section className="mt-10">
-            <h2 className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-              On the schedule (from /api/fixtures/snapshot)
-            </h2>
-            <div className="mt-3 space-y-2">
-              {fixtures === null && (
-                <p className="text-sm text-muted-foreground">loading…</p>
-              )}
-              {fixtures !== null && upcoming.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  No fixtures in window — the tournament sleeps.
-                </p>
-              )}
-              {upcoming.map((f) => (
-                <button
-                  key={f.FixtureId}
-                  onClick={() => record(f)}
-                  className={`flex w-full items-baseline justify-between rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
-                    picked?.FixtureId === f.FixtureId
-                      ? "border-primary"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                >
-                  <span className="font-medium">
-                    <Flag team={f.Participant1} size={14} className="mr-1.5" />
-                    {f.Participant1} v{" "}
-                    <Flag team={f.Participant2} size={14} className="mr-1.5" />
-                    {f.Participant2}
-                  </span>
-                  <span className="font-mono text-xs text-muted-foreground">
-                    {new Date(f.StartTime).toUTCString().slice(0, 22)} UTC
-                  </span>
-                </button>
-              ))}
+          {/* ── tape schedule ──────────────────────────────────────────── */}
+          <section className="px-6 pt-16 sm:px-10">
+            <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-6">
+              <h2 className="text-3xl font-semibold uppercase tracking-tighter sm:text-4xl">
+                Tape Schedule
+              </h2>
+              <p className="font-mono text-xs uppercase text-muted-foreground">
+                /fixtures/snapshot · rolling 48h window
+              </p>
             </div>
+            {fixtures === null && (
+              <p className="py-10 font-mono text-xs uppercase text-muted-foreground">
+                Pulling the schedule off the wire…
+              </p>
+            )}
+            {fixtures !== null && upcoming.length === 0 && (
+              <p className="py-10 font-mono text-xs uppercase text-muted-foreground">
+                No fixtures in window — the tournament sleeps.
+              </p>
+            )}
+            <ul>
+              {upcoming.map((f, i) => {
+                const cued = picked?.FixtureId === f.FixtureId;
+                return (
+                  <li key={f.FixtureId}>
+                    <button
+                      onClick={() => record(f)}
+                      className={`group grid w-full grid-cols-1 gap-2 border-b border-border py-6 text-left transition-colors md:grid-cols-12 md:items-baseline ${
+                        cued ? "text-primary" : "hover:text-primary"
+                      }`}
+                    >
+                      <span className="font-mono text-xs uppercase tracking-[0.25em] text-muted-foreground md:col-span-1">
+                        CH{String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span className="text-2xl font-bold tracking-tighter sm:text-3xl md:col-span-6">
+                        <Flag team={f.Participant1} size={20} className="mr-2" />
+                        {f.Participant1}
+                        <span className="mx-3 text-muted-foreground">v</span>
+                        <Flag team={f.Participant2} size={20} className="mr-2" />
+                        {f.Participant2}
+                      </span>
+                      <span className="font-mono text-xs uppercase text-muted-foreground md:col-span-3">
+                        {new Date(f.StartTime).toUTCString().slice(0, 22)} UTC
+                      </span>
+                      <span
+                        className={`font-mono text-xs uppercase tracking-widest md:col-span-2 md:text-right ${
+                          cued
+                            ? "text-primary"
+                            : "text-muted-foreground transition-colors group-hover:text-primary"
+                        }`}
+                      >
+                        {cued ? "● On the desk" : "Cue →"}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           </section>
 
+          {/* ── the live cut ───────────────────────────────────────────── */}
           {picked && (
-            <section className="mt-10 rounded-xl border border-border bg-card p-6">
-              <div className="flex items-baseline justify-between">
-                <h2 className="text-xl font-semibold">
-                  <Flag team={picked.Participant1} size={18} className="mr-2" />
-                  {picked.Participant1} v{" "}
-                  <Flag team={picked.Participant2} size={18} className="mr-2" />
+            <section className="mt-16 border-y border-border bg-card">
+              <div className="flex flex-wrap items-end justify-between gap-4 px-6 pt-10 sm:px-10">
+                <h2 className="text-4xl font-bold tracking-tighter sm:text-6xl">
+                  <Flag team={picked.Participant1} size={28} className="mr-3" />
+                  {picked.Participant1}
+                  <span className="mx-4 text-muted-foreground">v</span>
+                  <Flag team={picked.Participant2} size={28} className="mr-3" />
                   {picked.Participant2}
                 </h2>
-                <p className="font-mono text-xs text-muted-foreground">
-                  stream:{" "}
-                  <span
-                    className={
-                      status === "open" ? "text-primary" : "text-destructive"
-                    }
-                  >
-                    {status}
-                  </span>{" "}
-                  · {msgs} updates
-                </p>
+                <div className="flex items-center gap-6 pb-1">
+                  <Lamp status={status} />
+                  <span className="font-mono text-xs uppercase text-muted-foreground">
+                    {String(msgs).padStart(4, "0")} on tape
+                  </span>
+                </div>
               </div>
-              <div className="mt-6">
+
+              <div className="px-6 py-10 sm:px-10">
                 {wavePts.length ? (
                   <LiveWave points={wavePts} />
                 ) : (
-                  <p className="py-8 text-center font-mono text-xs text-muted-foreground">
-                    {status === "open"
-                      ? "tape rolling — waiting for market movement…"
-                      : "opening stream…"}
-                  </p>
+                  <div className="flex h-40 items-center justify-center border border-dashed border-border sm:h-56">
+                    <p className="font-mono text-xs uppercase tracking-[0.25em] text-muted-foreground">
+                      {status === "open"
+                        ? "Tape rolling — waiting for the market to flinch…"
+                        : "Opening the wire…"}
+                    </p>
+                  </div>
                 )}
               </div>
+
+              {/* console meters — what the market believes right now */}
               {lastPct && (
-                <div className="mt-4 flex justify-between font-mono text-xs tabular-nums">
-                  <span style={{ color: "var(--chart-1)" }}>
-                    <Flag team={picked.Participant1} size={12} className="mr-1" />
-                    {picked.Participant1} {lastPct[0]}%
-                  </span>
-                  <span className="text-muted-foreground">draw {lastPct[1]}%</span>
-                  <span style={{ color: "var(--chart-2)" }}>
-                    <Flag team={picked.Participant2} size={12} className="mr-1" />
-                    {picked.Participant2} {lastPct[2]}%
-                  </span>
+                <div className="grid grid-cols-1 border-t border-border sm:grid-cols-3">
+                  {(
+                    [
+                      [picked.Participant1, lastPct[0], "var(--chart-1)"],
+                      ["Draw", lastPct[1], "var(--chart-5)"],
+                      [picked.Participant2, lastPct[2], "var(--chart-2)"],
+                    ] as const
+                  ).map(([name, pct, color]) => (
+                    <div
+                      key={name}
+                      className="border-b border-r border-border p-6 last:border-b-0 sm:border-b-0 sm:p-8 sm:last:border-r-0"
+                    >
+                      <p className="mb-2 flex items-center gap-2 font-mono text-xs uppercase text-muted-foreground">
+                        {name !== "Draw" && <Flag team={name} size={13} />}
+                        {name}
+                      </p>
+                      <p
+                        className="font-mono text-4xl font-bold tabular-nums sm:text-5xl"
+                        style={{ color }}
+                      >
+                        {pct}%
+                      </p>
+                      <div className="mt-4 h-1 w-full bg-border">
+                        <div
+                          className="h-full transition-[width] duration-500"
+                          style={{ width: `${Math.min(100, Number(pct))}%`, backgroundColor: color }}
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </section>

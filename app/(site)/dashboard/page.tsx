@@ -8,6 +8,7 @@ import { useTxline } from "@/components/TxlineProvider";
 import { useHistory, HistoryEntry } from "@/lib/history";
 import { currentStreak, useGolazo } from "@/lib/golazo";
 import { explorerUrl, usePressings } from "@/lib/pressing";
+import Flag from "@/components/Flag";
 import {
   tracks,
   getTrack,
@@ -15,6 +16,7 @@ import {
   abbr,
   trackNumber,
   fmtDate,
+  teamCombo,
   Track,
 } from "@/lib/tracks";
 
@@ -61,6 +63,44 @@ export default function DashboardPage() {
       .sort((a, b) => b.metrics.lateDrama - a.metrics.lateDrama)
       .slice(0, 3);
   }, [played]);
+
+  // collector-card reads: most-played team, and a taste label cut from the
+  // average volatility of everything on the listening log
+  const favTeam = useMemo(() => {
+    const counts = new Map<string, { n: number; id: number }>();
+    for (const p of played) {
+      for (const [name, id] of [
+        [p.track.p1, p.track.p1Id],
+        [p.track.p2, p.track.p2Id],
+      ] as const) {
+        const c = counts.get(name) ?? { n: 0, id };
+        c.n += 1;
+        counts.set(name, c);
+      }
+    }
+    let best: { name: string; n: number; id: number } | null = null;
+    for (const [name, { n, id }] of counts) {
+      if (!best || n > best.n) best = { name, n, id };
+    }
+    return best;
+  }, [played]);
+
+  const avgVol = played.length
+    ? played.reduce((s, p) => s + p.track.metrics.volatility, 0) / played.length
+    : 0;
+  const tasteLabel = !played.length
+    ? "unwritten"
+    : avgVol >= 300
+      ? "plays it loud"
+      : avgVol >= 150
+        ? "mid-groove"
+        : "easy listening";
+
+  const cardCombo = teamCombo(favTeam?.id ?? 0);
+  const cardBars = hero.wave.filter(
+    (_, i) => i % Math.ceil(hero.wave.length / 18) === 0
+  );
+  const cardMax = Math.max(...hero.wave, 0.5);
 
   return (
     <main className="space-y-24 p-6 pb-32 sm:p-10">
@@ -146,56 +186,108 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* curator profile */}
+        {/* curator profile — the collector's card */}
         <aside className="space-y-12">
-          <div className="space-y-6">
-            <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center bg-primary text-3xl text-primary-foreground">
-                ◉
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-xl font-bold uppercase tracking-tight sm:text-2xl">
-                  {session
-                    ? `${session.wallet.slice(0, 4)}…${session.wallet.slice(-4)}`
-                    : "Guest Curator"}
-                </h3>
-                <p className="font-mono text-xs uppercase text-muted-foreground">
-                  {session ? "Live TxLINE session // devnet" : "No wallet session"}
-                </p>
-              </div>
+          <div
+            className="relative overflow-hidden border border-border p-6 sm:p-8"
+            style={
+              favTeam
+                ? { backgroundColor: cardCombo.bg, color: cardCombo.fg }
+                : undefined
+            }
+          >
+            {/* the last record you played, pressed into the card */}
+            <div className="pointer-events-none absolute inset-0 flex items-end gap-1 px-3 opacity-20">
+              {cardBars.map((v, i) => (
+                <div
+                  key={i}
+                  className="w-full"
+                  style={{
+                    height: `${Math.max(4, (v / cardMax) * 100)}%`,
+                    backgroundColor: favTeam ? cardCombo.accent : "var(--primary)",
+                  }}
+                />
+              ))}
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="border border-border bg-card p-6">
-                <div className="mb-2 font-mono text-xs uppercase text-muted-foreground">
-                  Matches Played
-                </div>
-                <div className="font-mono text-3xl font-bold">{played.length}</div>
+
+            <div className="relative">
+              <div className="flex items-baseline justify-between gap-2 font-mono text-[10px] uppercase tracking-[0.25em] opacity-70">
+                <span>Collector Card</span>
+                <span>2026 pressing</span>
               </div>
-              <div className="border border-border bg-card p-6">
-                <div className="mb-2 font-mono text-xs uppercase text-muted-foreground">
-                  Unique Bangers
-                </div>
-                <div className="font-mono text-3xl font-bold">{uniqueBangers}</div>
+
+              <h3 className="mt-8 font-mono text-3xl font-bold tracking-tight sm:text-4xl">
+                {session
+                  ? `${session.wallet.slice(0, 4)}…${session.wallet.slice(-4)}`
+                  : "GUEST"}
+              </h3>
+              <p className="mt-1 font-mono text-xs uppercase tracking-widest opacity-60">
+                {session ? "Live TxLINE session // devnet" : "No wallet session"}
+              </p>
+
+              <div className="mt-8 space-y-0 font-mono text-xs uppercase">
+                {(
+                  [
+                    [
+                      "Heavy rotation",
+                      favTeam ? (
+                        <span key="fav" className="flex items-center gap-2">
+                          <Flag team={favTeam.name} size={14} />
+                          {favTeam.name} ×{favTeam.n}
+                        </span>
+                      ) : (
+                        "—"
+                      ),
+                    ],
+                    ["Taste read", tasteLabel],
+                    ["Bangers owned", `${uniqueBangers}/${bangers.length}`],
+                  ] as const
+                ).map(([label, value]) => (
+                  <div
+                    key={label as string}
+                    className="flex items-center justify-between gap-3 border-t py-3"
+                    style={{
+                      borderColor:
+                        "color-mix(in oklab, currentColor 25%, transparent)",
+                    }}
+                  >
+                    <span className="opacity-60">{label}</span>
+                    <span className="text-right font-bold">{value}</span>
+                  </div>
+                ))}
               </div>
+
+              <div
+                className="mt-2 grid grid-cols-3 gap-2 border-t pt-5"
+                style={{
+                  borderColor:
+                    "color-mix(in oklab, currentColor 25%, transparent)",
+                }}
+              >
+                {(
+                  [
+                    ["Matches", String(played.length)],
+                    ["Streak", String(currentStreak(golazo.stats))],
+                    ["Solved", `${golazo.stats.wins}/${golazo.stats.played}`],
+                  ] as const
+                ).map(([label, value]) => (
+                  <div key={label}>
+                    <p className="font-mono text-[10px] uppercase opacity-60">
+                      {label}
+                    </p>
+                    <p className="font-mono text-2xl font-bold tabular-nums sm:text-3xl">
+                      {value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
               <Link
                 href="/guess"
-                className="border border-border bg-card p-6 transition-colors hover:border-primary"
+                className="mt-8 inline-block font-mono text-[10px] uppercase tracking-[0.25em] underline-offset-4 opacity-70 transition-opacity hover:opacity-100 hover:underline"
               >
-                <div className="mb-2 font-mono text-xs uppercase text-muted-foreground">
-                  Golazo Streak
-                </div>
-                <div className="font-mono text-3xl font-bold text-primary">
-                  {currentStreak(golazo.stats)}
-                </div>
+                Play today&apos;s Mystery →
               </Link>
-              <div className="border border-border bg-card p-6">
-                <div className="mb-2 font-mono text-xs uppercase text-muted-foreground">
-                  Golazo Solved
-                </div>
-                <div className="font-mono text-3xl font-bold">
-                  {golazo.stats.wins}/{golazo.stats.played}
-                </div>
-              </div>
             </div>
           </div>
 

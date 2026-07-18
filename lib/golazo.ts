@@ -161,5 +161,5 @@ export function shareText(state: GolazoState): string {
     )
     .join("");
   const score = state.solved ? `${state.guesses.length}/${MAX_GUESSES}` : `X/${MAX_GUESSES}`;
-  return `ENCORE GOLAZO #${n} ${score}\n${grid}\nguess the track — cut from TxLINE market data`;
+  return `ENCORE MYSTERY #${n} ${score}\n${grid}\nguess the track — cut from TxLINE market data`;
 }
