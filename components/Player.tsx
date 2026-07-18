@@ -5,6 +5,7 @@ import Link from "next/link";
 import Waveform from "@/components/Waveform";
 import { abbr, teamSlug, trackNumber, type Track } from "@/lib/tracks";
 import { logPlay } from "@/lib/history";
+import { useTxline } from "@/components/TxlineProvider";
 import Flag from "@/components/Flag";
 
 const TRACK_MIN = 135; // playable minutes on every track
@@ -33,6 +34,7 @@ function ProbChart({ track, minute }: { track: Track; minute: number }) {
 }
 
 export default function Player({ track }: { track: Track }) {
+  const { wallet } = useTxline();
   const [minute, setMinute] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
@@ -40,7 +42,7 @@ export default function Player({ track }: { track: Track }) {
   const raf = useRef<number>(0);
   const last = useRef<number>(0);
 
-  useEffect(() => logPlay(track.id), [track.id]);
+  useEffect(() => logPlay(wallet, track.id), [wallet, track.id]);
 
   useEffect(() => {
     if (!playing) return;

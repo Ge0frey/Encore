@@ -37,10 +37,10 @@ function MiniWave({ track }: { track: Track }) {
 }
 
 export default function DashboardPage() {
-  const { session } = useTxline();
-  const history = useHistory();
+  const { session, wallet } = useTxline();
+  const history = useHistory(wallet);
   const golazo = useGolazo();
-  const pressings = usePressings();
+  const pressings = usePressings(wallet);
 
   const played = useMemo(
     () =>

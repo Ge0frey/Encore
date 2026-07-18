@@ -51,7 +51,7 @@ function LogRow({
 export default function Press({ track }: { track: Track }) {
   const wallet = useWallet();
   const { session, connected, connect } = useTxline();
-  const pressings = usePressings();
+  const pressings = usePressings(wallet.publicKey?.toBase58() ?? null);
   const mine = pressings.find((p) => p.trackId === track.id);
 
   const [state, setState] = useState<

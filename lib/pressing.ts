@@ -37,14 +37,16 @@ import { TXLINE, apiGet, type TxlineSession } from "@/lib/txline";
 import { abbr, trackNumber, type Track } from "@/lib/tracks";
 import { toBytes32 } from "@/lib/verifyOnChain";
 
-const KEY = "encore.pressings.v1";
+// Pressings are keyed by the wallet that minted them — a different wallet
+// connecting in the same browser gets its own (empty) shelf.
+const keyFor = (owner: string) => `encore.pressings.v1.${owner}`;
 
 export type Pressing = { trackId: number; mint: string; sig: string; at: number };
 
-export function readPressings(): Pressing[] {
-  if (typeof window === "undefined") return [];
+export function readPressings(owner: string | null): Pressing[] {
+  if (typeof window === "undefined" || !owner) return [];
   try {
-    const raw = JSON.parse(localStorage.getItem(KEY) ?? "[]");
+    const raw = JSON.parse(localStorage.getItem(keyFor(owner)) ?? "[]");
     return Array.isArray(raw) ? (raw as Pressing[]) : [];
   } catch {
     return [];
@@ -60,11 +62,11 @@ const subscribe = (cb: () => void) => {
   };
 };
 
-/** SSR-safe shelf of pressings minted from this browser, newest first. */
-export function usePressings(): Pressing[] {
+/** SSR-safe shelf of pressings minted by this wallet, newest first. */
+export function usePressings(owner: string | null): Pressing[] {
   const json = useSyncExternalStore(
     subscribe,
-    () => localStorage.getItem(KEY) ?? "[]",
+    () => (owner ? localStorage.getItem(keyFor(owner)) ?? "[]" : "[]"),
     () => "[]"
   );
   return useMemo(() => {
@@ -77,8 +79,11 @@ export function usePressings(): Pressing[] {
   }, [json]);
 }
 
-function logPressing(p: Pressing) {
-  localStorage.setItem(KEY, JSON.stringify([p, ...readPressings()]));
+function logPressing(owner: string, p: Pressing) {
+  localStorage.setItem(
+    keyFor(owner),
+    JSON.stringify([p, ...readPressings(owner)])
+  );
   window.dispatchEvent(new Event("pressings"));
 }
 
@@ -272,7 +277,7 @@ export async function pressRecord(
     sig,
     at: Date.now(),
   };
-  logPressing(pressing);
+  logPressing(payer.toBase58(), pressing);
   onStep("done");
   return pressing;
 }

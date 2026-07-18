@@ -1,18 +1,24 @@
 "use client";
 
-/** Listening history — which tracks this browser has spun, newest first. */
+/**
+ * Listening history — which tracks have been spun, newest first.
+ * Scoped to the connected wallet; the legacy un-suffixed key doubles as the
+ * guest bucket when no wallet is connected.
+ */
 
 import { useMemo, useSyncExternalStore } from "react";
 
 const KEY = "encore.history.v1";
 const MAX = 50;
 
+const keyFor = (owner: string | null) => (owner ? `${KEY}.${owner}` : KEY);
+
 export type HistoryEntry = { id: number; at: number };
 
-export function readHistory(): HistoryEntry[] {
+export function readHistory(owner: string | null): HistoryEntry[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = JSON.parse(localStorage.getItem(KEY) ?? "[]");
+    const raw = JSON.parse(localStorage.getItem(keyFor(owner)) ?? "[]");
     return Array.isArray(raw) ? (raw as HistoryEntry[]) : [];
   } catch {
     return [];
@@ -25,10 +31,10 @@ const subscribe = (cb: () => void) => {
 };
 
 /** SSR-safe listening history (empty on the server, hydrated on the client). */
-export function useHistory(): HistoryEntry[] {
+export function useHistory(owner: string | null): HistoryEntry[] {
   const json = useSyncExternalStore(
     subscribe,
-    () => localStorage.getItem(KEY) ?? "[]",
+    () => localStorage.getItem(keyFor(owner)) ?? "[]",
     () => "[]"
   );
   return useMemo(() => {
@@ -41,11 +47,11 @@ export function useHistory(): HistoryEntry[] {
   }, [json]);
 }
 
-export function logPlay(id: number) {
+export function logPlay(owner: string | null, id: number) {
   if (typeof window === "undefined") return;
-  const rest = readHistory().filter((e) => e.id !== id);
+  const rest = readHistory(owner).filter((e) => e.id !== id);
   localStorage.setItem(
-    KEY,
+    keyFor(owner),
     JSON.stringify([{ id, at: Date.now() }, ...rest].slice(0, MAX))
   );
 }
