@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, Space_Mono } from "next/font/google";
 import TxlineProvider from "@/components/TxlineProvider";
+import { tracks } from "@/lib/tracks";
 import "./globals.css";
 
 const sans = Space_Grotesk({
@@ -16,8 +17,7 @@ const mono = Space_Mono({
 
 export const metadata: Metadata = {
   title: "ENCORE — every match is a track",
-  description:
-    "The World Cup as a playable record collection. 101 matches cut from live TxLINE market data.",
+  description: `The World Cup as a playable record collection. ${tracks.length} matches cut from live TxLINE market data.`,
 };
 
 export default function RootLayout({
