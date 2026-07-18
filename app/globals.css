@@ -151,6 +151,35 @@ body {
   animation-delay: calc(var(--i) * 30ms);
 }
 
+/* Landing curtain stack — sections pin at the top and the next one slides
+   over; the shadow gives the incoming panel its lifted-poster depth */
+.stack-panel {
+  box-shadow: 0 -28px 70px rgb(0 0 0 / 0.45);
+}
+
+/* Marquee strips (moments reel, hero roster) — seamless two-copy loop;
+   pauses under the cursor */
+@keyframes moments-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.moments-track {
+  animation: moments-marquee 55s linear infinite;
+}
+.roster-track {
+  animation: moments-marquee 45s linear infinite;
+}
+.moments-track:hover,
+.roster-track:hover {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .moments-track,
+  .roster-track {
+    animation: none;
+  }
+}
+
 /* Waveform Maximalist utilities (superdesign) */
 .text-outline {
   color: transparent;

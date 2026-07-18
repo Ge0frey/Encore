@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import MatchCard from "@/components/MatchCard";
 import ShareCard from "@/components/ShareCard";
+import Flag from "@/components/Flag";
 import {
   abbr,
   allTeams,
@@ -57,8 +58,11 @@ export default async function RunPage({
             <span>{abbr(ref.name)}</span>
             <span className="text-outline">THE RUN</span>
           </h1>
-          <p className="pt-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-            {ref.name} · {stats.matches} tracks · deepest cut: {stats.deepestStage}
+          <p className="flex items-center gap-2 pt-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
+            <Flag team={ref.name} size={18} />
+            <span>
+              {ref.name} · {stats.matches} tracks · deepest cut: {stats.deepestStage}
+            </span>
           </p>
           <div className="pt-6">
             <ShareCard

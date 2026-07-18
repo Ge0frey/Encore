@@ -1,7 +1,9 @@
 import Link from "next/link";
 import GridLines from "@/components/GridLines";
 import LandingNav from "@/components/LandingNav";
-import { playlists, tracks, sleeveCombo, abbr } from "@/lib/tracks";
+import Moments from "@/components/Moments";
+import { playlists, tracks, sleeveCombo, abbr, allTeams } from "@/lib/tracks";
+import Flag from "@/components/Flag";
 
 /* ENCORE landing — editorial record-press breakdown of the app.
    Uneven grid rules run the full page; type crosses them on purpose. */
@@ -100,11 +102,12 @@ export default function Landing() {
         }}
       />
 
-      <main className="relative overflow-hidden">
-        <GridLines />
-
-        {/* ---- Hero: the masthead poster ---- */}
-        <section className="relative z-10 px-6 pt-16 sm:px-10 sm:pt-24">
+      <main className="relative overflow-x-clip">
+        {/* ---- Hero: the masthead poster — full first page ---- */}
+        <section className="relative z-10 flex min-h-[calc(100svh-5.1rem)] flex-col bg-background px-6 pt-16 sm:px-10 sm:pt-24 md:sticky md:top-0">
+          <div className="absolute inset-0 -z-10">
+            <GridLines />
+          </div>
           <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
             / A TxLINE Consumer Experience /
           </p>
@@ -113,29 +116,73 @@ export default function Landing() {
             ENCORE<span className="align-super text-[0.28em] font-normal">®</span>
           </h1>
 
-          <div className="mt-8 grid grid-cols-1 items-end gap-10 md:grid-cols-12">
-            <p className="text-outline text-[clamp(2.2rem,6vw,5rem)] font-bold uppercase leading-[0.9] tracking-tighter md:col-span-7">
-              Every match
-              <br />
-              is a track
-            </p>
-            <div className="md:col-span-4 md:col-start-9">
-              <p className="text-lg font-light leading-relaxed sm:text-xl">
-                The 2026 World Cup, pressed as a record collection.{" "}
-                <span className="text-primary">{tracks.length} matches</span> cut
-                from live TxLINE market data — every waveform is a betting market
-                losing its nerve in real time.
+          {/* tagline band — flex-1 centers it so the leftover viewport height
+              splits evenly above and below instead of pooling in one void */}
+          <div className="flex flex-1 flex-col justify-center py-10">
+            <div className="grid grid-cols-1 items-end gap-10 md:grid-cols-12">
+              <p className="text-outline text-[clamp(2.2rem,6vw,5rem)] font-bold uppercase leading-[0.9] tracking-tighter md:col-span-7">
+                Every match
+                <br />
+                is a track
               </p>
-              <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-                _ Browse it like a crate of records /
-              </p>
+              <div className="md:col-span-4 md:col-start-9">
+                <p className="text-lg font-light leading-relaxed sm:text-xl">
+                  The 2026 World Cup, pressed as a record collection.{" "}
+                  <span className="text-primary">{tracks.length} matches</span>{" "}
+                  cut from live TxLINE market data — every waveform is a betting
+                  market losing its nerve in real time.
+                </p>
+                <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+                  _ Browse it like a crate of records /
+                </p>
+              </div>
             </div>
           </div>
 
+          {/* the pressing roster — all 48 nations, run on a loop at the foot
+              of the poster */}
+          <div>
+            <p className="pb-4 font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+              ( The Roster — {allTeams.length} nations on this pressing )
+            </p>
+            <div className="-mx-6 overflow-hidden border-t border-border py-5 sm:-mx-10">
+              <div className="roster-track flex w-max">
+                {[false, true].map((dup) => (
+                  <div
+                    key={dup ? "b" : "a"}
+                    className="flex shrink-0 items-center gap-5 pr-5"
+                    aria-hidden={dup}
+                  >
+                    {allTeams.map((t) => (
+                      <Link
+                        key={t.slug}
+                        href={`/run/${t.slug}`}
+                        title={t.name}
+                        tabIndex={dup ? -1 : undefined}
+                        className="group shrink-0"
+                      >
+                        <Flag
+                          team={t.name}
+                          size={28}
+                          className="transition-transform duration-300 group-hover:scale-125"
+                        />
+                      </Link>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* ---- The pitch ---- */}
-        <section id="pitch" className="relative z-10 mt-32 px-6 sm:px-10">
+        <section
+          id="pitch"
+          className="stack-panel relative z-10 flex min-h-[100svh] flex-col justify-center bg-background px-6 sm:px-10 md:sticky md:top-0"
+        >
+          <div className="absolute inset-0 -z-10">
+            <GridLines />
+          </div>
           <div className="grid grid-cols-1 gap-10 border-t border-border pt-10 md:grid-cols-12">
             <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground md:col-span-3">
               ( The Pitch )
@@ -156,8 +203,17 @@ export default function Landing() {
           </div>
         </section>
 
+        {/* ---- The moments: why any of this matters ---- */}
+        <Moments />
+
         {/* ---- How it's cut ---- */}
-        <section id="cut" className="relative z-10 mt-32 px-6 sm:px-10">
+        <section
+          id="cut"
+          className="stack-panel relative z-10 flex min-h-[100svh] flex-col justify-center bg-background px-6 sm:px-10 md:sticky md:top-0"
+        >
+          <div className="absolute inset-0 -z-10">
+            <GridLines />
+          </div>
           <div className="flex flex-wrap items-end justify-between gap-3 border-t border-border pt-10">
             <h2 className="text-3xl font-semibold uppercase tracking-tighter sm:text-4xl">
               How it&apos;s cut
@@ -190,7 +246,7 @@ export default function Landing() {
 
         {/* ---- Spoiler-free band: cream sleeve, ink type ---- */}
         <section
-          className="relative z-10 mt-32 px-6 py-20 sm:px-10 sm:py-28"
+          className="stack-panel relative z-10 flex min-h-[100svh] flex-col justify-center px-6 py-20 sm:px-10 sm:py-28 md:sticky md:top-0"
           style={{
             backgroundColor: "oklch(0.97 0.015 80)",
             color: "oklch(0.16 0.02 25)",
@@ -219,7 +275,13 @@ export default function Landing() {
         </section>
 
         {/* ---- Playlists index ---- */}
-        <section id="playlists" className="relative z-10 mt-32 px-6 sm:px-10">
+        <section
+          id="playlists"
+          className="stack-panel relative z-10 flex min-h-[100svh] flex-col justify-center bg-background px-6 sm:px-10 md:sticky md:top-0"
+        >
+          <div className="absolute inset-0 -z-10">
+            <GridLines />
+          </div>
           <div className="flex flex-wrap items-end justify-between gap-3 border-t border-border pt-10">
             <h2 className="text-3xl font-semibold uppercase tracking-tighter sm:text-4xl">
               The Playlists
@@ -259,7 +321,13 @@ export default function Landing() {
         </section>
 
         {/* ---- The rooms ---- */}
-        <section id="rooms" className="relative z-10 mt-32 px-6 sm:px-10">
+        <section
+          id="rooms"
+          className="stack-panel relative z-10 flex min-h-[100svh] flex-col bg-background px-6 pb-10 pt-24 sm:px-10 md:sticky md:top-0"
+        >
+          <div className="absolute inset-0 -z-10">
+            <GridLines />
+          </div>
           <div className="flex flex-wrap items-end justify-between gap-3 border-t border-border pt-10 pb-10">
             <h2 className="text-3xl font-semibold uppercase tracking-tighter sm:text-4xl">
               The Rooms
@@ -268,7 +336,7 @@ export default function Landing() {
               Five ways into the record
             </p>
           </div>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
+          <div className="grid flex-1 auto-rows-fr grid-cols-1 gap-6 md:grid-cols-12">
             {ROOMS.map((r) => (
               <Link
                 key={r.href}
@@ -296,7 +364,10 @@ export default function Landing() {
         </section>
 
         {/* ---- Closing CTA ---- */}
-        <section className="relative z-10 mt-32 border-t border-border px-6 py-24 sm:px-10 sm:py-32">
+        <section className="stack-panel relative z-10 flex min-h-[100svh] flex-col justify-center border-t border-border bg-background px-6 py-24 sm:px-10 sm:py-32 md:sticky md:top-0">
+          <div className="absolute inset-0 -z-10">
+            <GridLines />
+          </div>
           <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
             The needle is waiting /
           </p>
