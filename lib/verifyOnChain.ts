@@ -173,6 +173,140 @@ export async function verifyOddsOnChain(
   };
 }
 
+/** One provable key-value stat (key 1 = P1 goals, 2 = P2 goals; ×1000 period). */
+export type StatToProve = { key: number; value: number; period: number };
+
+/** Shape of GET /api/scores/stat-validation (OpenAPI: ScoresStatValidation). */
+export type ScoresStatValidationResponse = {
+  ts?: number;
+  statToProve: StatToProve;
+  eventStatRoot: HashJson;
+  summary: {
+    fixtureId: number;
+    updateStats: {
+      updateCount: number;
+      minTimestamp: number;
+      maxTimestamp: number;
+    };
+    eventStatsSubTreeRoot: HashJson;
+  };
+  statProof: ProofNodeJson[] | Record<string, never>;
+  subTreeProof: ProofNodeJson[] | Record<string, never>;
+  mainTreeProof: ProofNodeJson[] | Record<string, never>;
+  statToProve2?: StatToProve | null;
+  statProof2?: ProofNodeJson[] | Record<string, never> | null;
+};
+
+export type StatVerdict = OnChainVerdict & { stat: StatToProve };
+
+/**
+ * Ask the TxLINE program whether a claimed stat value matches the score data
+ * committed on-chain: `validate_stat` recomputes stat → event → fixture →
+ * daily root and rules on the predicate. Read-only `.view()`, like the odds
+ * check. A false/PredicateFailed outcome means "the claim is wrong", not a
+ * transport fault.
+ */
+export async function verifyStatOnChain(
+  walletPubkey: string,
+  validation: ScoresStatValidationResponse,
+  opts: {
+    which?: 1 | 2;
+    predicate: {
+      threshold: number;
+      comparison: "equalTo" | "greaterThan" | "lessThan";
+    };
+  }
+): Promise<StatVerdict> {
+  const program = readOnlyProgram(walletPubkey);
+  const s = validation.summary;
+
+  const statToProve =
+    opts.which === 2 ? validation.statToProve2 : validation.statToProve;
+  const statProof =
+    opts.which === 2 ? validation.statProof2 : validation.statProof;
+  if (!statToProve) throw new Error("validation response has no second stat");
+
+  const rootBytes = toBytes32(s.eventStatsSubTreeRoot);
+  // API field is eventStatsSubTreeRoot; the program struct calls it
+  // events_sub_tree_root → Anchor camelCase eventsSubTreeRoot.
+  const fixtureSummary = {
+    fixtureId: new BN(s.fixtureId),
+    updateStats: {
+      updateCount: s.updateStats.updateCount,
+      minTimestamp: new BN(s.updateStats.minTimestamp),
+      maxTimestamp: new BN(s.updateStats.maxTimestamp),
+    },
+    eventsSubTreeRoot: rootBytes,
+  };
+
+  const statTerm = {
+    statToProve,
+    eventStatRoot: toBytes32(validation.eventStatRoot),
+    statProof: toProofNodes(statProof),
+  };
+
+  const predicate = {
+    threshold: opts.predicate.threshold,
+    comparison: { [opts.predicate.comparison]: {} },
+  };
+
+  const run = async (ts: number): Promise<StatVerdict> => {
+    const epochDay = Math.floor(ts / 86_400_000);
+    const [pda] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("daily_scores_roots"),
+        new BN(epochDay).toArrayLike(Buffer, "le", 2),
+      ],
+      program.programId
+    );
+    let ok: boolean;
+    try {
+      ok = await program.methods
+        .validateStat(
+          new BN(ts),
+          fixtureSummary,
+          toProofNodes(validation.subTreeProof),
+          toProofNodes(validation.mainTreeProof),
+          predicate,
+          statTerm,
+          null,
+          null
+        )
+        .accounts({ dailyScoresMerkleRoots: pda })
+        .preInstructions([
+          ComputeBudgetProgram.setComputeUnitLimit({ units: 1_400_000 }),
+        ])
+        .view();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!msg.includes("PredicateFailed")) throw e;
+      ok = false;
+    }
+    return {
+      ok,
+      pda: pda.toBase58(),
+      epochDay,
+      root: toHex(rootBytes),
+      stat: statToProve,
+    };
+  };
+
+  const primary = s.updateStats.minTimestamp;
+  try {
+    return await run(primary);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    const alt = validation.ts;
+    if (
+      alt &&
+      alt !== primary &&
+      /TimeSlotMismatch|TimestampMismatch/.test(msg)
+    )
+      return run(alt);
+    throw e;
+  }
+}
+
 /** Human-sized message for a failed simulation (anchor errors are noisy). */
 export function verifyErrorMessage(e: unknown): string {
   const raw = e instanceof Error ? e.message : String(e);
@@ -182,6 +316,9 @@ export function verifyErrorMessage(e: unknown): string {
     ["RootNotAvailable", "no Merkle root posted on-chain for this time slot"],
     ["TimeSlotMismatch", "snapshot and on-chain root disagree on time slot"],
     ["TimestampMismatch", "timestamp does not match the snapshot payload"],
+    ["PredicateFailed", "the program ran the proof — the claimed value is wrong"],
+    ["InvalidStatProof", "stat proof rejected — stat ∉ event"],
+    ["InvalidFixtureSubTreeProof", "fixture proof rejected — event ∉ fixture summary"],
   ] as const;
   for (const [code, msg] of known) if (raw.includes(code)) return msg;
   return raw.length > 200 ? `${raw.slice(0, 200)}…` : raw;

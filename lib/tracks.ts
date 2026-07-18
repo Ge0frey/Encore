@@ -163,6 +163,63 @@ export const sleeveThemeVars = (t: Track) => {
   } as ReactCSSProperties;
 };
 
+/** URL slug for a team name: "Bosnia & Herzegovina" → "bosnia-and-herzegovina". */
+export const teamSlug = (name: string) =>
+  name
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+export type TeamRef = { name: string; id: number; slug: string };
+
+export const allTeams: TeamRef[] = (() => {
+  const seen = new Map<number, TeamRef>();
+  for (const t of tracks) {
+    if (!seen.has(t.p1Id)) seen.set(t.p1Id, { name: t.p1, id: t.p1Id, slug: teamSlug(t.p1) });
+    if (!seen.has(t.p2Id)) seen.set(t.p2Id, { name: t.p2, id: t.p2Id, slug: teamSlug(t.p2) });
+  }
+  return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
+})();
+
+const bySlug = new Map(allTeams.map((t) => [t.slug, t]));
+export const teamBySlug = (slug: string) => bySlug.get(slug);
+
+export const teamTracks = (name: string): Track[] =>
+  tracks
+    .filter((t) => t.p1 === name || t.p2 === name)
+    .sort((a, b) => a.kickoff - b.kickoff);
+
+export type RunStats = {
+  matches: number;
+  avgVolatility: number;
+  heists: number;
+  peakSwing: number;
+  totalFlips: number;
+  stagesPlayed: string[];
+  deepestStage: string;
+};
+
+export const runStats = (list: Track[]): RunStats => {
+  const played = new Set(list.map((t) => t.stage));
+  // `stages` runs Final → Group Stage; the run reads it chronologically.
+  const ladder = [...stages].reverse();
+  const stagesPlayed = ladder.filter((s) => played.has(s));
+  return {
+    matches: list.length,
+    avgVolatility: list.reduce((s, t) => s + t.metrics.volatility, 0) / Math.max(list.length, 1),
+    heists: list.filter((t) => t.metrics.upset > 0).length,
+    peakSwing: Math.max(0, ...list.map((t) => t.metrics.maxSwing)),
+    totalFlips: list.reduce((s, t) => s + t.metrics.flips, 0),
+    stagesPlayed,
+    deepestStage: stagesPlayed[stagesPlayed.length - 1] ?? "—",
+  };
+};
+
+/** Stable team palette (oklch + hex twins), keyed off the numeric team id. */
+export const teamCombo = (teamId: number) => sleeveCombos[teamId % sleeveCombos.length];
+export const teamComboHex = (teamId: number) => sleeveCombosHex[teamId % sleeveCombosHex.length];
+
 export const trackNumber = (t: Track) =>
   [...tracks].sort((a, b) => a.kickoff - b.kickoff).findIndex((x) => x.id === t.id) + 1;
 
