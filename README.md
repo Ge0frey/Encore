@@ -1,36 +1,223 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ENCORE
 
-## Getting Started
+Every World Cup 2026 match, pressed as a record.
 
-First, run the development server:
+ENCORE turns the TxLINE consensus odds feed on Solana into a spoiler-free music catalogue. Each fixture becomes a "track": ninety-plus minutes of betting market movement mastered into a waveform you can scrub, collect, argue over, and cryptographically verify against the roots TxODDS commits on-chain. The sleeve shows the market swing, never the score. The drama stays sealed until you press play.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## How it works
+
+1. **The Feed.** TxLINE publishes consensus odds for the World Cup on Solana devnet. When a visitor connects a wallet, the browser provisions its own session end to end: guest JWT, an on-chain `subscribe` transaction on the free World Cup tier, then a wallet-signed activation that yields an API token. No backend, no shared keys, nothing baked into the app. Sessions are cached per wallet in localStorage.
+
+2. **The Cut.** An offline pipeline (`pipeline/`) enumerates every finished fixture, harvests full historical odds and scores through the 5-minute interval endpoints (`ingest.ts`), then presses each match into a compact track record (`compute.py`): a per-minute volatility waveform, a win-probability timeline, "quakes" (sudden market shocks that mark goals), card events, playlist metrics, and templated commentary lines. Output is a single `data/tracks.json` the app ships with.
+
+3. **The Play.** The player renders the waveform and lets you drop the needle anywhere. Probability, commentary beats, goals, and cards unfold minute by minute as the market lived them.
+
+## Core features
+
+### Spoiler-free replay player
+Scrub any track from kickoff to full time. The UI is built around one rule: nothing reveals the result before playback reaches it. Sleeves, cards, and share images encode volatility and swing, not scores. Matches played before the score feed launched are labelled by market consensus rather than a recorded final score.
+
+### Playlists and the Archive
+Tracks are auto-curated into playlists from their metrics: **Bangers** (highest volatility), **Heartbreaks** (late drama), **Daylight Robbery** (upsets), **Mood Swings** (probability flips), and **Lullabies** (the flattest games). The Archive holds the whole vault, searchable and filterable by stage, team, and chaos.
+
+### Team runs
+Every nation gets a run page at `/run/[team]`: its full tournament as a poster series with aggregate stats, themed in the team's colours, with a downloadable poster image.
+
+### Compare and BANTER
+Put two tracks on the bench at `/compare` and BANTER settles the argument. Verdicts are pure functions of TxLINE-derived metrics, so the same two tracks always produce the same roast, backed by three receipt stats. Every verdict has a shareable card.
+
+### The Booth (live)
+A live room streaming odds off the wire over SSE, cut into waveform in real time as they land.
+
+### The Mystery
+A daily guess-the-track game at `/guess`. One mystery match a day, picked deterministically so every visitor gets the same puzzle. Wrong guesses reveal clues one at a time, with streaks tracked locally.
+
+### On-chain verification
+Proofs are not just fetched, they are executed. The app calls the TxLINE program's `validate_odds` (and `validate_stat` for matches with real score data) as read-only `.view()` simulations against devnet. The program itself recomputes the Merkle branch up to the root TxODDS committed on-chain and returns the verdict. No signature, no fee, and the answer comes from the program, not from us.
+
+### Pressings
+Collect a match as a Token-2022 NFT minted by your own wallet on devnet. No Metaplex: metadata lives on the mint account via the MetadataPointer and TokenMetadata extensions. Two fields make each pressing provable:
+
+- `dataHash`: sha256 of the canonical track record rendered in the app
+- `oddsRoot`: the Merkle sub-tree root TxODDS committed on-chain for the record's batch
+
+Your shelf of pressings appears on the dashboard, and each has hosted metadata at `/track/[id]/pressing.json`.
+
+### Dashboard and sharing
+The dashboard charts your listening history and pressings per wallet. Tracks, comparisons, and team runs all render themed OpenGraph images, and share cards support copy, open, and PNG download.
+
+## Screenshots
+
+Full-page captures of each section. Click one to expand.
+
+<details>
+<summary><b>Landing</b> - every match is a track</summary>
+<br>
+
+![ENCORE landing page](docs/screenshots/landing.png)
+
+</details>
+
+<details>
+<summary><b>Market</b> - every playlist in crates</summary>
+<br>
+
+![The Market](docs/screenshots/market.png)
+
+</details>
+
+<details>
+<summary><b>Archive</b> - the whole vault, searchable</summary>
+<br>
+
+![The Archive](docs/screenshots/archive.png)
+
+</details>
+
+<details>
+<summary><b>Track player</b> - liner notes, metrics, and the authenticity panel</summary>
+<br>
+
+![Track player](docs/screenshots/player.png)
+
+</details>
+
+<details>
+<summary><b>Compare</b> - three on the bench, two in the ring</summary>
+<br>
+
+![Market comparison](docs/screenshots/compare.png)
+
+</details>
+
+<details>
+<summary><b>The Booth</b> - the live room on standby</summary>
+<br>
+
+![The Booth](docs/screenshots/booth.png)
+
+</details>
+
+<details>
+<summary><b>The Mystery</b> - one waveform, five guesses</summary>
+<br>
+
+![The Mystery](docs/screenshots/mystery.png)
+
+</details>
+
+<details>
+<summary><b>Vibe Check</b> - the dashboard</summary>
+<br>
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+</details>
+
+<details>
+<summary><b>Team run</b> - Argentina's tournament as a poster series</summary>
+<br>
+
+![Team run](docs/screenshots/run.png)
+
+</details>
+
+<details>
+<summary><b>Pressing</b> - a minted Token-2022 record on the shelf</summary>
+<br>
+
+![A minted pressing](docs/screenshots/pressing.png)
+
+</details>
+
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph Pipeline["Offline pipeline (run once)"]
+        ING["ingest.ts<br/>harvest odds + scores"] --> ARC["data/archive/<br/>raw per-fixture JSON"]
+        ARC --> CMP["compute.py<br/>press waveforms + metrics"]
+        CMP --> TRK["data/tracks.json<br/>102 mastered tracks"]
+    end
+
+    subgraph App["Next.js app (browser)"]
+        TRK --> UI["Player / Playlists / Archive<br/>Runs / Compare / Mystery"]
+        SES["lib/txline.ts<br/>per-wallet session"]
+        VER["Verify<br/>on-chain proof check"]
+        PRS["Pressings<br/>Token-2022 mint"]
+        LIV["The Booth<br/>live SSE waveform"]
+    end
+
+    subgraph TxLINE["TxLINE (devnet)"]
+        API["TxLINE REST API<br/>txline-dev.txodds.com"]
+        PRG["TxLINE oracle program<br/>6pW64gN1...wyP2J"]
+    end
+
+    SOL["Solana devnet"]
+
+    ING -->|"fixtures + 5 min interval updates"| API
+    SES -->|"guest JWT + token activate"| API
+    SES -->|"subscribe tx (wallet signed)"| PRG
+    LIV -->|"odds stream (SSE)"| API
+    VER -->|"snapshots + Merkle proofs"| API
+    VER -->|"validate_odds / validate_stat (.view)"| PRG
+    PRS -->|"mint NFT with dataHash + oddsRoot"| SOL
+    PRG --- SOL
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The split is deliberate: the pipeline does the heavy harvesting once and ships a static archive, so browsing is instant and free of API load. Everything trust-sensitive (session auth, proof verification, minting) runs live in the visitor's browser against TxLINE and Solana directly.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## TxLINE API endpoints in use
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+All calls go to `https://txline-dev.txodds.com`. The app authenticates with a guest JWT upgraded to a wallet-activated API token.
 
-## Learn More
+| Endpoint | Used by | Purpose |
+|---|---|---|
+| `POST /auth/guest/start` | app, pipeline | Bootstrap a guest JWT for a wallet |
+| `POST /api/token/activate` | app, pipeline | Wallet-signed activation, returns the API token |
+| `GET /api/fixtures/snapshot?competitionId=&startEpochDay=` | Booth, pipeline | Enumerate World Cup fixtures |
+| `GET /api/odds/stream?fixtureId=` | Booth | Live consensus odds over SSE |
+| `GET /api/odds/snapshot/{fixtureId}?asOf=` | Verify, Pressings | A settled odds row near a chosen minute (probed on an asOf ladder) |
+| `GET /api/odds/validation?messageId=&ts=` | Verify, Pressings | Merkle proof and committed odds root for that row |
+| `GET /api/scores/snapshot/{fixtureId}?asOf=` | Verify | Final score rows for matches with real score data |
+| `GET /api/scores/stat-validation?fixtureId=&seq=&statKey=` | Verify | Merkle proof for goal stats |
+| `GET /api/odds/updates/{interval}` | pipeline | Historical odds, harvested in 5 minute intervals |
+| `GET /api/scores/updates/{interval}` | pipeline | Historical score events, same interval scheme |
 
-To learn more about Next.js, take a look at the following resources:
+On top of the REST API, the app calls three instructions on the TxLINE oracle program: `subscribe` (wallet-signed, free World Cup tier), and `validate_odds` / `validate_stat` as read-only `.view()` simulations that make the program itself verdict on each proof.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Frontend:** Next.js 16 (App Router), React 19, Tailwind CSS 4
+- **Solana:** `@solana/web3.js`, Anchor, `@solana/spl-token` (Token-2022), wallet-adapter
+- **Data:** TxLINE API (`txline-dev.txodds.com`) plus the TxLINE oracle program on devnet (`6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J`)
+- **Pipeline:** TypeScript ingest, Python compute; runs offline, outputs static JSON
 
-## Deploy on Vercel
+There is no application server or database. All live data access happens from the visitor's browser against the TxLINE API and Solana devnet.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Getting started
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000). Optionally set `NEXT_PUBLIC_RPC_URL` to a custom Solana devnet RPC (defaults to `https://api.devnet.solana.com`). Connect a devnet wallet to activate a TxLINE session, verify proofs, and mint pressings; browsing the archive works without one.
+
+To rebuild the archive from scratch:
+
+```bash
+cd pipeline
+NETWORK=devnet npx ts-node scripts/ingest.ts   # harvest odds + scores
+python3 scripts/compute.py                     # press data/tracks.json
+```
+
+## Project structure
+
+```
+app/            routes: market, archive, compare, live, guess, dashboard, run, track
+components/     player, waveform, match cards, verify, press, share cards
+lib/            txline session, track model, banter, mystery game, pressing, on-chain verify
+pipeline/       offline ingest (TypeScript) + track compute (Python)
+data/           tracks.json, the pressed archive the app ships with
+```
