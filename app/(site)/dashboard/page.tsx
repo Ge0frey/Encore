@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import MatchCard from "@/components/MatchCard";
+import { FlagPair } from "@/components/Flag";
 import { useTxline } from "@/components/TxlineProvider";
 import { useHistory, HistoryEntry } from "@/lib/history";
 import { currentStreak, useGolazo } from "@/lib/golazo";
@@ -106,7 +107,8 @@ export default function DashboardPage() {
                   #{String(trackNumber(track)).padStart(3, "0")}
                 </div>
                 <div className="col-span-6 sm:col-span-4">
-                  <h4 className="text-lg font-bold uppercase tracking-tight sm:text-xl">
+                  <h4 className="flex items-center gap-2 text-lg font-bold uppercase tracking-tight sm:text-xl">
+                    <FlagPair p1={track.p1} p2={track.p2} size={18} />
                     {abbr(track.p1)} / {abbr(track.p2)}
                   </h4>
                   <p className="font-mono text-xs text-muted-foreground">
@@ -224,7 +226,8 @@ export default function DashboardPage() {
                     href={`/track/${t.id}`}
                     className="font-mono text-sm hover:text-primary"
                   >
-                    ◉ {abbr(t.p1)} v {abbr(t.p2)}
+                    ◉ <FlagPair p1={t.p1} p2={t.p2} size={14} className="mx-1" />{" "}
+                    {abbr(t.p1)} v {abbr(t.p2)}
                   </Link>
                   <a
                     href={explorerUrl(p.mint)}

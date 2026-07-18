@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { abbr, allTeams, runStats, teamTracks } from "@/lib/tracks";
+import Flag from "@/components/Flag";
 
 export const metadata = {
   title: "The Runs | ENCORE",
@@ -49,7 +50,10 @@ export default function RunsIndex() {
               </span>
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-semibold uppercase">{t.name}</p>
+              <p className="flex items-center gap-2 text-sm font-semibold uppercase">
+                <Flag team={t.name} size={16} />
+                {t.name}
+              </p>
               <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                 deepest: {t.stats.deepestStage}
                 {t.stats.heists > 0 ? ` · ${t.stats.heists} heists` : ""}

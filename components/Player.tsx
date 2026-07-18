@@ -5,6 +5,7 @@ import Link from "next/link";
 import Waveform from "@/components/Waveform";
 import { abbr, teamSlug, trackNumber, type Track } from "@/lib/tracks";
 import { logPlay } from "@/lib/history";
+import Flag from "@/components/Flag";
 
 const TRACK_MIN = 135; // playable minutes on every track
 const BASE_SECONDS = 90; // full match replays in 90 real seconds at 1×
@@ -252,10 +253,12 @@ export default function Player({ track }: { track: Track }) {
             <ProbChart track={track} minute={shown} />
             <div className="mt-3 flex justify-between font-mono text-xs tabular-nums">
               <span style={{ color: "var(--chart-1)" }}>
+                <Flag team={track.p1} size={12} className="mr-1" />
                 {track.p1} {nowProb[1].toFixed(1)}%
               </span>
               <span className="text-muted-foreground">draw {nowProb[2].toFixed(1)}%</span>
               <span style={{ color: "var(--chart-2)" }}>
+                <Flag team={track.p2} size={12} className="mr-1" />
                 {track.p2} {nowProb[3].toFixed(1)}%
               </span>
             </div>

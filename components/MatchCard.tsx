@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRef } from "react";
 import { Track, sleeveCombo, abbr, trackNumber, fmtDate } from "@/lib/tracks";
+import Flag from "@/components/Flag";
 
 type Size = "hero" | "row" | "grid";
 
@@ -139,9 +140,13 @@ export default function MatchCard({
           </span>
         </div>
 
-        <p className="mt-4 font-mono text-[10px] uppercase tracking-widest opacity-50">
-          TRK {String(trackNumber(track)).padStart(3, "0")} · {track.p1} v{" "}
-          {track.p2}
+        <p className="mt-4 flex flex-wrap items-center gap-x-1.5 font-mono text-[10px] uppercase tracking-widest opacity-50">
+          <span>TRK {String(trackNumber(track)).padStart(3, "0")} ·</span>
+          <Flag team={track.p1} size={13} />
+          <span>{track.p1}</span>
+          <span>v</span>
+          <Flag team={track.p2} size={13} />
+          <span>{track.p2}</span>
         </p>
       </div>
     </Link>

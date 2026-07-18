@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTxline } from "@/components/TxlineProvider";
+import Flag from "@/components/Flag";
 import { apiGet, streamOdds } from "@/lib/txline";
 
 type Fixture = {
@@ -162,7 +163,10 @@ export default function LivePage() {
                   }`}
                 >
                   <span className="font-medium">
-                    {f.Participant1} v {f.Participant2}
+                    <Flag team={f.Participant1} size={14} className="mr-1.5" />
+                    {f.Participant1} v{" "}
+                    <Flag team={f.Participant2} size={14} className="mr-1.5" />
+                    {f.Participant2}
                   </span>
                   <span className="font-mono text-xs text-muted-foreground">
                     {new Date(f.StartTime).toUTCString().slice(0, 22)} UTC
@@ -176,7 +180,10 @@ export default function LivePage() {
             <section className="mt-10 rounded-xl border border-border bg-card p-6">
               <div className="flex items-baseline justify-between">
                 <h2 className="text-xl font-semibold">
-                  {picked.Participant1} v {picked.Participant2}
+                  <Flag team={picked.Participant1} size={18} className="mr-2" />
+                  {picked.Participant1} v{" "}
+                  <Flag team={picked.Participant2} size={18} className="mr-2" />
+                  {picked.Participant2}
                 </h2>
                 <p className="font-mono text-xs text-muted-foreground">
                   stream:{" "}
@@ -204,10 +211,12 @@ export default function LivePage() {
               {lastPct && (
                 <div className="mt-4 flex justify-between font-mono text-xs tabular-nums">
                   <span style={{ color: "var(--chart-1)" }}>
+                    <Flag team={picked.Participant1} size={12} className="mr-1" />
                     {picked.Participant1} {lastPct[0]}%
                   </span>
                   <span className="text-muted-foreground">draw {lastPct[1]}%</span>
                   <span style={{ color: "var(--chart-2)" }}>
+                    <Flag team={picked.Participant2} size={12} className="mr-1" />
                     {picked.Participant2} {lastPct[2]}%
                   </span>
                 </div>

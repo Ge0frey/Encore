@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import Waveform from "@/components/Waveform";
+import Flag from "@/components/Flag";
 import {
   MAX_GUESSES,
   currentStreak,
@@ -184,7 +185,10 @@ export default function GuessPage() {
                   className="flex w-full items-baseline justify-between px-4 py-3 text-left text-sm transition-colors hover:bg-secondary disabled:opacity-40"
                 >
                   <span className="font-medium">
-                    {t.p1} v {t.p2}
+                    <Flag team={t.p1} size={14} className="mr-1.5" />
+                    {t.p1} v{" "}
+                    <Flag team={t.p2} size={14} className="mr-1.5" />
+                    {t.p2}
                   </span>
                   <span className="font-mono text-xs text-muted-foreground">
                     {t.stage} · {fmtDate(t.kickoff)}
@@ -212,7 +216,9 @@ export default function GuessPage() {
                 }`}
               >
                 <span className="font-mono text-sm">
-                  {i + 1}. {abbr(g.p1)} v {abbr(g.p2)} {hit && "— GOLAZO ✓"}
+                  {i + 1}. <Flag team={g.p1} size={13} className="mr-1" />
+                  {abbr(g.p1)} v <Flag team={g.p2} size={13} className="mr-1" />
+                  {abbr(g.p2)} {hit && "— GOLAZO ✓"}
                 </span>
                 {!hit && (
                   <span className="flex gap-3 font-mono text-[10px] uppercase text-muted-foreground">
@@ -242,8 +248,10 @@ export default function GuessPage() {
               : "Out of guesses"}
           </p>
           <h2 className="mt-4 text-3xl font-bold uppercase tracking-tighter sm:text-4xl">
+            <Flag team={answer.p1} size={26} className="mr-2" />
             {answer.p1} {answer.score ? answer.score[0] : ""}–
             {answer.score ? answer.score[1] : ""} {answer.p2}
+            <Flag team={answer.p2} size={26} className="ml-2" />
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">{answer.lines[0]}</p>
           <div className="mt-6 flex flex-wrap items-center gap-4">
