@@ -106,12 +106,12 @@ export function tracksByStage(stage: string): Track[] {
 
 /** Sleeve art color combos — disciplined poster set, indexed by fixture id. */
 export const sleeveCombos = [
-  { bg: "oklch(0.68 0.22 25)", fg: "oklch(0.14 0.02 25)", accent: "oklch(0.97 0.015 80)" },
-  { bg: "oklch(0.16 0.02 25)", fg: "oklch(0.97 0.015 80)", accent: "oklch(0.68 0.22 25)" },
-  { bg: "oklch(0.97 0.015 80)", fg: "oklch(0.16 0.02 25)", accent: "oklch(0.55 0.22 25)" },
-  { bg: "oklch(0.8 0.13 85)", fg: "oklch(0.16 0.02 25)", accent: "oklch(0.55 0.22 25)" },
-  { bg: "oklch(0.28 0.06 250)", fg: "oklch(0.97 0.015 80)", accent: "oklch(0.68 0.22 25)" },
-  { bg: "oklch(0.35 0.09 150)", fg: "oklch(0.97 0.015 80)", accent: "oklch(0.8 0.13 85)" },
+  { bg: "oklch(0.63 0.23 27)", fg: "oklch(0.14 0.02 25)", accent: "oklch(0.97 0.015 80)" },
+  { bg: "oklch(0.16 0.02 25)", fg: "oklch(0.97 0.015 80)", accent: "oklch(0.65 0.24 28)" },
+  { bg: "oklch(0.97 0.015 80)", fg: "oklch(0.16 0.02 25)", accent: "oklch(0.55 0.24 27)" },
+  { bg: "oklch(0.82 0.17 88)", fg: "oklch(0.16 0.02 25)", accent: "oklch(0.55 0.24 27)" },
+  { bg: "oklch(0.3 0.1 255)", fg: "oklch(0.97 0.015 80)", accent: "oklch(0.65 0.24 28)" },
+  { bg: "oklch(0.4 0.14 152)", fg: "oklch(0.97 0.015 80)", accent: "oklch(0.82 0.17 88)" },
 ];
 
 export const sleeveCombo = (t: Track) =>
@@ -122,12 +122,12 @@ export const sleeveCombo = (t: Track) =>
  * can't parse oklch — satori/ImageResponse share cards.
  */
 export const sleeveCombosHex = [
-  { bg: "#FF4C4D", fg: "#100606", accent: "#FBF4EA" },
-  { bg: "#150A09", fg: "#FBF4EA", accent: "#FF4C4D" },
-  { bg: "#FBF4EA", fg: "#150A09", accent: "#D40924" },
-  { bg: "#E4B750", fg: "#150A09", accent: "#D40924" },
-  { bg: "#0E2A45", fg: "#FBF4EA", accent: "#FF4C4D" },
-  { bg: "#09471F", fg: "#FBF4EA", accent: "#E4B750" },
+  { bg: "#F53131", fg: "#100606", accent: "#FBF4EA" },
+  { bg: "#150A09", fg: "#FBF4EA", accent: "#FF312C" },
+  { bg: "#FBF4EA", fg: "#150A09", accent: "#DB0003" },
+  { bg: "#F2BC00", fg: "#150A09", accent: "#DB0003" },
+  { bg: "#002C5E", fg: "#FBF4EA", accent: "#FF312C" },
+  { bg: "#005B1B", fg: "#FBF4EA", accent: "#F2BC00" },
 ];
 
 export const sleeveComboHex = (t: Track) =>

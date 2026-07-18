@@ -61,7 +61,7 @@ const ROOMS = [
     desc: "Two tracks on the bench, side by side. Settle the argument with data.",
     span: "md:col-span-4",
     style: {
-      backgroundColor: "oklch(0.28 0.06 250)",
+      backgroundColor: "oklch(0.3 0.1 255)",
       color: "oklch(0.97 0.015 80)",
     } as React.CSSProperties,
   },
@@ -72,7 +72,7 @@ const ROOMS = [
     desc: "The live room. Odds coming off the wire in real time, cut as they land.",
     span: "md:col-span-8",
     style: {
-      backgroundColor: "oklch(0.8 0.13 85)",
+      backgroundColor: "oklch(0.82 0.17 88)",
       color: "oklch(0.16 0.02 25)",
     } as React.CSSProperties,
   },
@@ -258,7 +258,7 @@ export default function Landing() {
           <h2 className="mt-6 text-[clamp(2.8rem,8vw,7rem)] font-bold uppercase leading-[0.85] tracking-tighter">
             No scores
             <br />
-            on the <span style={{ color: "oklch(0.55 0.22 25)" }}>sleeve.</span>
+            on the <span style={{ color: "oklch(0.55 0.24 27)" }}>sleeve.</span>
           </h2>
           <div className="mt-10 grid grid-cols-1 gap-10 md:grid-cols-12">
             <p className="max-w-xl text-lg font-light leading-relaxed sm:text-xl md:col-span-6">
@@ -288,7 +288,7 @@ export default function Landing() {
             </h2>
             <p
               className="font-mono text-5xl font-bold tracking-tighter sm:text-6xl"
-              style={{ color: "oklch(0.8 0.13 85)" }}
+              style={{ color: "oklch(0.82 0.17 88)" }}
             >
               {"{"}
               {playlists.length}
