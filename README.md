@@ -12,6 +12,31 @@ ENCORE turns the TxLINE consensus odds feed on Solana into a spoiler-free music 
 
 3. **The Play.** The player renders the waveform and lets you drop the needle anywhere. Probability, commentary beats, goals, and cards unfold minute by minute as the market lived them.
 
+## Anatomy of a track
+
+Every entry in `data/tracks.json` is a self-contained record of one fixture — 102 of them, covering every finished match from the group stage through the semi-finals. The important fields:
+
+| Field | What it holds |
+|---|---|
+| `wave` | Per-minute market volatility across 135 minutes — the waveform the player renders |
+| `prob` | Win-probability timeline as `[minute, home, draw, away]` rows, sampled from the consensus odds |
+| `opening` / `closing` | The market's first and last word on the match |
+| `quakes` | Sudden market shocks: any single step that moves a side's win probability by 7+ points (nearby shocks on the same side merge, because odds settle in steps) |
+| `goals` | Real goal events where the score feed covers the match; inferred from quakes where it doesn't |
+| `cards` | Booking events from the stats feed |
+| `metrics` | The five playlist metrics below |
+| `lines` | Templated commentary beats, revealed at the minute they occur |
+
+The playlist metrics are the app's whole editorial voice, and each one is a pure function of the odds:
+
+- **volatility** — total per-minute market movement across the match; the loudness of the record
+- **lateDrama** — movement from the 70th minute on; how much the ending hurt
+- **maxSwing** — the single biggest quake; the hardest moment
+- **upset** — the favourite's opening probability, counted only when a 55%+ favourite failed to win
+- **flips** — lead changes: how many times the market's most-likely outcome changed
+
+Matches whose score events have aged out of the API's retention window become **bootleg recordings**: no scoreline is fabricated — the market's shockwaves stand in as the only goals, and the sleeve is labelled by market consensus instead of a recorded final score.
+
 ## Core features
 
 ### Spoiler-free replay player
@@ -45,6 +70,34 @@ Your shelf of pressings appears on the dashboard, and each has hosted metadata a
 
 ### Dashboard and sharing
 The dashboard charts your listening history and pressings per wallet. Tracks, comparisons, and team runs all render themed OpenGraph images, and share cards support copy, open, and PNG download.
+
+## Product utility and business model
+
+### The problem it solves
+
+Football is the world's biggest spoiler problem. Hundreds of millions of fans watch matches on delay — time zones, work, life — and one push notification ruins everything. Highlight platforms fight this with blurred thumbnails and "hide scores" toggles that leak constantly, because their underlying asset (video) *is* the spoiler. ENCORE inverts the problem: its underlying asset is the betting market's heartbeat, which encodes all of the drama and none of the result. A track can be browsed, ranked, shared, and argued over in complete safety, then replayed to feel the match unfold.
+
+The second problem is provenance. Digital sports memorabilia has been sold for years with nothing behind it but a JPEG and a promise. A pressing is different in kind: its `dataHash` commits to the exact record you replayed, and its `oddsRoot` chains it to a Merkle root TxODDS committed on-chain before the collectible existed. Anyone can re-run `validate_odds` and get a verdict from the oracle program itself — not from ENCORE.
+
+### Who it's for
+
+- **The delayed viewer** — checks whether last night's match is worth the full replay without learning the score. "Bangers" versus "Lullabies" is the honest answer TV guides can't give.
+- **The collector** — mints the matches that mattered to them, provably tied to oracle-committed data rather than to a platform's database.
+- **The arguer** — settles "our comeback was better than yours" with BANTER's receipts instead of vibes, and every verdict is a shareable card.
+- **The daily player** — the Mystery's one-puzzle-a-day loop, the same match for every visitor, brings people back between matchdays.
+
+### How it makes money
+
+The World Cup archive stays free — it is the top of the funnel. Revenue stacks on top of it:
+
+1. **Premium competitions.** TxLINE's subscription tiers are already on-chain; the free World Cup tier is what the app subscribes to today. Club football is the paid catalogue: domestic leagues, the Champions League, historical seasons — sold per-competition or as an all-access pass, using the same wallet-signed subscribe flow the app already runs end to end.
+2. **Pressings as merchandise.** Browsing is free; pressing is the purchase. On mainnet, mints price like posters (single-digit dollars), with limited "first pressing" runs per match and team box sets bundled off the run pages. Because metadata lives on the mint itself, secondary-market royalties are enforceable without a marketplace dependency.
+3. **B2B white-label.** The pipeline turns any odds feed into a consumer replay product. Broadcasters and highlight platforms license it as a spoiler-safe front door to their video; sportsbooks license it as a retention surface that plays their own market's story back to bettors after full time. TxODDS itself gains a consumer showcase for feed data that otherwise only quants ever see.
+4. **Sponsorship inventory.** Playlists are native premium slots ("Bangers, presented by …"), and every share card, poster, and OG image the app renders is branded surface area that the sharing loop distributes for free.
+
+### The growth loop
+
+Every feature exports an image: track sleeves, BANTER verdict cards, team run posters, Mystery results. Each is spoiler-free by construction, so fans can post them mid-tournament without caveats — the organic sharing that score-based products have to suppress is exactly what ENCORE is built around. Sharing costs the platform nothing (there is no server), and every shared card is an entry point back into the free archive.
 
 ## Screenshots
 
