@@ -58,7 +58,7 @@ function Lamp({ status }: { status: "idle" | "open" | "closed" | "error" }) {
 }
 
 export default function LivePage() {
-  const { session, connected, connect, step } = useTxline();
+  const { session, connected, connect, step, error } = useTxline();
   const [fixtures, setFixtures] = useState<Fixture[] | null>(null);
   const [picked, setPicked] = useState<Fixture | null>(null);
   const [status, setStatus] = useState<"idle" | "open" | "closed" | "error">(
@@ -189,7 +189,7 @@ export default function LivePage() {
             The desk is cold /
           </p>
           <p className="mt-6 max-w-2xl text-2xl font-light leading-relaxed sm:text-3xl">
-            {connected && step && step !== "done"
+            {connected && step && step !== "done" && !error
               ? "Provisioning your TxLINE session — warming the valves…"
               : "One devnet wallet, one on-chain subscribe (free tier), one signature — then the wire is yours."}
           </p>

@@ -28,6 +28,7 @@ import {
   loadSession,
   provision,
 } from "@/lib/txline";
+import ProvisionProgress from "@/components/ProvisionProgress";
 import "@solana/wallet-adapter-react-ui/styles.css";
 
 type Ctx = {
@@ -76,7 +77,7 @@ function SessionInner({ children }: { children: React.ReactNode }) {
       const s = await provision(wallet, setStep);
       setSession(s);
     } catch (e) {
-      setStep(null);
+      // Keep `step` pointing at the step that died so UIs can mark it failed.
       setError(e instanceof Error ? e.message : String(e));
     }
   }, [wallet]);
@@ -86,12 +87,14 @@ function SessionInner({ children }: { children: React.ReactNode }) {
     if (!wallet.publicKey) {
       setSession(null);
       setStep(null);
+      setError(null);
       return;
     }
     const cached = loadSession(wallet.publicKey.toBase58());
     if (cached) {
       setSession(cached);
       setStep("done");
+      setError(null);
     } else {
       void run();
     }
@@ -117,7 +120,12 @@ function SessionInner({ children }: { children: React.ReactNode }) {
     [session, step, error, wallet, setVisible, run]
   );
 
-  return <SessionCtx.Provider value={value}>{children}</SessionCtx.Provider>;
+  return (
+    <SessionCtx.Provider value={value}>
+      {children}
+      <ProvisionProgress />
+    </SessionCtx.Provider>
+  );
 }
 
 export default function TxlineProvider({
