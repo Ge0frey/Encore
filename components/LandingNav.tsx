@@ -22,6 +22,7 @@ const ROOMS = [
   { label: "Market", href: "/market" },
   { label: "Vibe Check", href: "/dashboard" },
   { label: "Archives", href: "/archive" },
+  { label: "Runs", href: "/run" },
   { label: "Compare", href: "/compare" },
   { label: "Golazo", href: "/guess" },
   { label: "Booth", href: "/live" },

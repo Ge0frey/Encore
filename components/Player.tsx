@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import Waveform from "@/components/Waveform";
-import { abbr, trackNumber, type Track } from "@/lib/tracks";
+import { abbr, teamSlug, trackNumber, type Track } from "@/lib/tracks";
 import { logPlay } from "@/lib/history";
 
 const TRACK_MIN = 135; // playable minutes on every track
@@ -75,7 +76,7 @@ export default function Player({ track }: { track: Track }) {
   }, [track, shown]);
 
   const events = useMemo(() => {
-    const evs: { min: number; label: string; kind: "goal" | "quake" }[] = [];
+    const evs: { min: number; label: string; kind: "goal" | "quake" | "card" }[] = [];
     for (const g of track.goals)
       evs.push({
         min: g.min,
@@ -91,12 +92,19 @@ export default function Player({ track }: { track: Track }) {
           kind: "quake",
           label: `${q.mag}-pt market quake toward ${q.side === "p1" ? track.p1 : track.p2}`,
         });
+    for (const c of track.cards)
+      evs.push({
+        min: c.min,
+        kind: "card",
+        label: `${c.type === "red" ? "🟥 RED CARD" : "🟨 YELLOW CARD"} — ${c.side === "p1" ? track.p1 : track.p2}`,
+      });
     return evs.sort((a, b) => a.min - b.min);
   }, [track]);
 
   const seek = (e: React.MouseEvent<HTMLDivElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
-    setMinute(((e.clientX - r.left) / r.width) * TRACK_MIN);
+    const m = ((e.clientX - r.left) / r.width) * TRACK_MIN;
+    setMinute(m);
     setSpoiler(false);
   };
 
@@ -127,7 +135,20 @@ export default function Player({ track }: { track: Track }) {
                 <span className="text-outline">{abbr(track.p2)}</span>
               </h1>
               <p className="pt-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-                {track.p1} v {track.p2} · {track.stage}
+                <Link
+                  href={`/run/${teamSlug(track.p1)}`}
+                  className="transition-colors hover:text-primary hover:underline"
+                >
+                  {track.p1}
+                </Link>{" "}
+                v{" "}
+                <Link
+                  href={`/run/${teamSlug(track.p2)}`}
+                  className="transition-colors hover:text-primary hover:underline"
+                >
+                  {track.p2}
+                </Link>{" "}
+                · {track.stage}
               </p>
             </div>
             <div className="space-y-2 pb-2 text-right sm:space-y-4">
@@ -210,7 +231,11 @@ export default function Player({ track }: { track: Track }) {
                   </span>
                   <p
                     className={
-                      e.kind === "goal" ? "font-bold text-foreground" : "text-foreground/70"
+                      e.kind === "goal"
+                        ? "font-bold text-foreground"
+                        : e.kind === "card"
+                          ? "font-bold text-primary"
+                          : "text-foreground/70"
                     }
                   >
                     {e.label}

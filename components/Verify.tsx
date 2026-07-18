@@ -6,10 +6,13 @@ import { apiGet, TXLINE } from "@/lib/txline";
 import {
   OddsValidationResponse,
   OnChainVerdict,
+  ScoresStatValidationResponse,
+  StatVerdict,
   verifyErrorMessage,
   verifyOddsOnChain,
+  verifyStatOnChain,
 } from "@/lib/verifyOnChain";
-import type { Track } from "@/lib/tracks";
+import { abbr, type Track } from "@/lib/tracks";
 
 type OddsRow = {
   MessageId: string;
@@ -19,16 +22,34 @@ type OddsRow = {
   PriceNames?: string[];
 };
 
+/** Live scores rows arrive PascalCase; the OpenAPI schema says camelCase. */
+type ScoreRow = {
+  Seq?: number;
+  seq?: number;
+  Action?: string;
+  action?: string;
+  Stats?: Record<string, number>;
+  stats?: Record<string, number>;
+};
+
+type StatVerdicts = {
+  p1: StatVerdict | null;
+  p2: StatVerdict | null;
+  err: string | null;
+};
+
 type State =
   | { s: "idle" }
   | { s: "loading" }
   | { s: "verifying"; row: OddsRow }
+  | { s: "verifying-stat"; row: OddsRow }
   | {
       s: "done";
       row: OddsRow;
       proof: OddsValidationResponse | null;
       verdict: OnChainVerdict | null;
       verdictErr: string | null;
+      statVerdicts: StatVerdicts | null;
       at: number;
     }
   | { s: "error"; msg: string };
@@ -117,13 +138,60 @@ export default function Verify({ track }: { track: Track }) {
           verdictErr = verifyErrorMessage(e);
         }
       }
-      setState({ s: "done", row, proof, verdict, verdictErr, at: Date.now() });
+
+      // Act IV — only tracks with a real score feed can seal the scoreline;
+      // a stat failure never takes the odds verdict down with it.
+      let statVerdicts: StatVerdicts | null = null;
+      if (track.scoresReal && track.score) {
+        setState({ s: "verifying-stat", row });
+        try {
+          const rows = await apiGet<ScoreRow[]>(
+            session,
+            `/scores/snapshot/${track.id}?asOf=${track.kickoff + 3 * 3600 * 1000}`
+          );
+          const withStats = rows.filter((r) => (r.Stats ?? r.stats) != null);
+          if (!withStats.length) throw new Error("no score rows returned");
+          const finals = withStats.filter(
+            (r) => (r.Action ?? r.action) === "game_finalised"
+          );
+          const pool = finals.length ? finals : withStats;
+          const best = pool.reduce((a, b) =>
+            (a.Seq ?? a.seq ?? 0) >= (b.Seq ?? b.seq ?? 0) ? a : b
+          );
+          const statProof = await apiGet<ScoresStatValidationResponse>(
+            session,
+            `/scores/stat-validation?fixtureId=${track.id}&seq=${best.Seq ?? best.seq}&statKey=1&statKey2=2`
+          );
+          const p1 = await verifyStatOnChain(session.wallet, statProof, {
+            which: 1,
+            predicate: { threshold: track.score[0], comparison: "equalTo" },
+          });
+          const p2 = await verifyStatOnChain(session.wallet, statProof, {
+            which: 2,
+            predicate: { threshold: track.score[1], comparison: "equalTo" },
+          });
+          statVerdicts = { p1, p2, err: null };
+        } catch (e) {
+          statVerdicts = { p1: null, p2: null, err: verifyErrorMessage(e) };
+        }
+      }
+
+      setState({
+        s: "done",
+        row,
+        proof,
+        verdict,
+        verdictErr,
+        statVerdicts,
+        at: Date.now(),
+      });
     } catch (e) {
       setState({ s: "error", msg: e instanceof Error ? e.message : String(e) });
     }
   };
 
-  const busy = state.s === "loading" || state.s === "verifying";
+  const busy =
+    state.s === "loading" || state.s === "verifying" || state.s === "verifying-stat";
   const statusWord =
     state.s === "idle"
       ? "standing by"
@@ -131,11 +199,13 @@ export default function Verify({ track }: { track: Track }) {
         ? "querying oracle"
         : state.s === "verifying"
           ? "asking the program"
-          : state.s === "error"
-            ? "faulted"
-            : state.verdict?.ok
-              ? "verified"
-              : "unresolved";
+          : state.s === "verifying-stat"
+            ? "proving the score"
+            : state.s === "error"
+              ? "faulted"
+              : state.verdict?.ok
+                ? "verified"
+                : "unresolved";
 
   return (
     <div className="flex h-full flex-col p-6 sm:p-8">
@@ -167,6 +237,9 @@ export default function Verify({ track }: { track: Track }) {
             <LogRow label="Act I" value="re-pull the closing odds, live" />
             <LogRow label="Act II" value="fetch the Merkle branch" />
             <LogRow label="Act III" value="validate_odds rules on-chain" />
+            {track.scoresReal && track.score && (
+              <LogRow label="Act IV" value="validate_stat seals the score" />
+            )}
           </>
         )}
 
@@ -174,7 +247,7 @@ export default function Verify({ track }: { track: Track }) {
           <LogRow label="Snapshot" value="pulling closing odds…" pending />
         )}
 
-        {(state.s === "verifying" || state.s === "done") && (
+        {(state.s === "verifying" || state.s === "verifying-stat" || state.s === "done") && (
           <>
             <LogRow
               label="Snapshot"
@@ -191,6 +264,14 @@ export default function Verify({ track }: { track: Track }) {
           <LogRow
             label="Program"
             value="simulating validate_odds on devnet…"
+            pending
+          />
+        )}
+
+        {state.s === "verifying-stat" && (
+          <LogRow
+            label="Score"
+            value="proving the final score via validate_stat…"
             pending
           />
         )}
@@ -227,6 +308,46 @@ export default function Verify({ track }: { track: Track }) {
               <LogRow label="Program" value={state.verdictErr} tone="destructive" />
             )}
 
+            {state.statVerdicts &&
+              (state.statVerdicts.err ? (
+                <LogRow
+                  label="Score"
+                  value={state.statVerdicts.err}
+                  tone="destructive"
+                />
+              ) : (
+                <>
+                  {state.statVerdicts.p1 && (
+                    <LogRow
+                      label="Score PDA"
+                      value={`${state.statVerdicts.p1.pda.slice(0, 8)}…${state.statVerdicts.p1.pda.slice(-6)} · day ${state.statVerdicts.p1.epochDay}`}
+                    />
+                  )}
+                  {state.statVerdicts.p1 && (
+                    <LogRow
+                      label="Program"
+                      value={
+                        state.statVerdicts.p1.ok
+                          ? `validate_stat → TRUE · ${abbr(track.p1)} goals = ${state.statVerdicts.p1.stat.value}`
+                          : `validate_stat → rejected · ${abbr(track.p1)} goals`
+                      }
+                      tone={state.statVerdicts.p1.ok ? "primary" : "destructive"}
+                    />
+                  )}
+                  {state.statVerdicts.p2 && (
+                    <LogRow
+                      label="Program"
+                      value={
+                        state.statVerdicts.p2.ok
+                          ? `validate_stat → TRUE · ${abbr(track.p2)} goals = ${state.statVerdicts.p2.stat.value}`
+                          : `validate_stat → rejected · ${abbr(track.p2)} goals`
+                      }
+                      tone={state.statVerdicts.p2.ok ? "primary" : "destructive"}
+                    />
+                  )}
+                </>
+              ))}
+
             {state.verdict?.ok && (
               <p className="mt-6 font-mono text-[10px] uppercase tracking-widest text-primary">
                 Verified on-chain
@@ -251,9 +372,11 @@ export default function Verify({ track }: { track: Track }) {
             ? "querying TxLINE…"
             : state.s === "verifying"
               ? "asking the program…"
-              : state.s === "done" || state.s === "error"
-                ? "Run the check again"
-                : "Verify against TxLINE now"}
+              : state.s === "verifying-stat"
+                ? "proving the score…"
+                : state.s === "done" || state.s === "error"
+                  ? "Run the check again"
+                  : "Verify against TxLINE now"}
         </button>
       ) : (
         <button
