@@ -1,3 +1,12 @@
+## QUICK LINKS:
+
+#### Detailed Demo video: https://youtu.be/xI3uaBU3FQc
+#### Live Link: https://encorefans.vercel.app/
+#### Launch video: https://x.com/historiah_hq/status/2078908850711798110?s=20
+#### X Devlog: https://x.com/historiah_hq/status/2078905760403050752?s=20
+
+---
+
 # ENCORE
 
 Every World Cup 2026 match, pressed as a record.
