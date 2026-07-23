@@ -15,9 +15,32 @@ const mono = Space_Mono({
   subsets: ["latin"],
 });
 
+const title = "ENCORE — every match is a track";
+const description = `The World Cup as a playable record collection. ${tracks.length} matches cut from live TxLINE market data.`;
+
 export const metadata: Metadata = {
-  title: "ENCORE — every match is a track",
-  description: `The World Cup as a playable record collection. ${tracks.length} matches cut from live TxLINE market data.`,
+  metadataBase: new URL("https://encorefans.vercel.app"),
+  title,
+  description,
+  openGraph: {
+    type: "website",
+    siteName: "ENCORE",
+    url: "/",
+    title,
+    description,
+    // static masthead card (cards/preview.html); /track and /run segments
+    // override this with their own generated opengraph-image
+    images: [
+      { url: "/og.png", width: 1200, height: 630, alt: "ENCORE — every match is a track" },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "@TXODDSOfficial",
+    title,
+    description,
+    images: ["/og.png"],
+  },
 };
 
 export default function RootLayout({
